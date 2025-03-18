@@ -1,0 +1,21 @@
+
+
+spring:
+  application:
+    name: ChatAppACE_Group03
+  config:
+    import: optional:file:.env[.properties]  # Import từ file .env
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI}  # Lấy từ .env
+      database: chatapp
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+rsa:
+  rsa-private-key: ${RSA_PRIVATE_KEY}  # Lấy từ .env
+  rsa-public-key: ${RSA_PUBLIC_KEY} # Lấy từ .env
