@@ -6,9 +6,17 @@
 
 package vn.edu.iuh.fit.dtos.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 /*
@@ -20,9 +28,16 @@ import java.util.List;
 @Data
 @Builder
 public class SignUpRequest {
-    private String firstName;
-    private String lastName;
+    @JsonProperty("display_name")
+    @NotBlank(message = "Display name is required")
+    private String displayName;
+    @NotBlank(message = "Phone number is required")
     private String phone;
+
+    @Size(min=8, message = "Mật khẩu phải có ít nhất 8 ký tự")
     private String password;
-    private List<String> roles;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    LocalDate dob;
+    List<String> roles;
 }

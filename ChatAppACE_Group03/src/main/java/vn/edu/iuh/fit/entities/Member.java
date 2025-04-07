@@ -10,6 +10,9 @@ import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import vn.edu.iuh.fit.enums.MemberRoles;
+
+import java.time.Instant;
 
 /*
  * @description:
@@ -28,5 +31,7 @@ public class Member {
     @Id
     private ObjectId id;
     private ObjectId userId;
-    private String role;
+    private ObjectId conversationId;
+    private Instant joinedAt;
+    private MemberRoles role;
 }

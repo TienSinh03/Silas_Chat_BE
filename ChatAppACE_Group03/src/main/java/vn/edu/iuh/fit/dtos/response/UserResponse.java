@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import org.bson.types.ObjectId;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,15 +29,13 @@ import java.util.List;
 @NoArgsConstructor
 public class UserResponse {
     private ObjectId id;
-    @JsonProperty("first_name")
-    private String firstName;
-    @JsonProperty("last_name")
-    private String lastName;
+    @JsonProperty("display_name")
+    private String displayName;
     private String password;
     private String gender;
     private String phone;
     private String avatar;
-    private LocalDateTime dob;
+    private LocalDate dob;
     private boolean enabled;
     List<String> roles;
 }

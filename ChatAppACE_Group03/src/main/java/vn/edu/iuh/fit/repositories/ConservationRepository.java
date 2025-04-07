@@ -9,8 +9,7 @@ package vn.edu.iuh.fit.repositories;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
-import vn.edu.iuh.fit.entities.File;
-import vn.edu.iuh.fit.entities.Group;
+import vn.edu.iuh.fit.entities.Conservation;
 
 /*
  * @description:
@@ -19,5 +18,5 @@ import vn.edu.iuh.fit.entities.Group;
  * @version:    1.0
  */
 @Repository
-public interface GroupRepository extends MongoRepository<Group, ObjectId> {
+public interface ConservationRepository extends MongoRepository<Conservation, ObjectId> {
 }

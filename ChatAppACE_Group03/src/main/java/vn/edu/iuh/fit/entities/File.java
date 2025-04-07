@@ -7,6 +7,7 @@
 package vn.edu.iuh.fit.entities;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -29,8 +30,8 @@ import java.time.Instant;
 public class File {
     @Id
     private ObjectId id;
-    private ObjectId sender;
-    private ObjectId receiver;
+    private ObjectId sender; // Người gửi
+    private ObjectId receiver;  // Người nhận file
     private ObjectId messageId;
     private String fileName;
     private String fileType;
