@@ -10,6 +10,7 @@ import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import vn.edu.iuh.fit.enums.RequestFriendStatus;
 
 import java.time.Instant;
 
@@ -31,6 +32,7 @@ public class FriendRequest {
     private ObjectId id;
     private ObjectId sender;
     private ObjectId receiver;
-    private String status;
+    private RequestFriendStatus status;
     private Instant sendAt;
+
 }

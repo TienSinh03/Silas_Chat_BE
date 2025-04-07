@@ -27,8 +27,10 @@ import vn.edu.iuh.fit.dtos.response.SignInResponse;
 import vn.edu.iuh.fit.entities.RefreshToken;
 import vn.edu.iuh.fit.entities.User;
 import vn.edu.iuh.fit.services.AuthService;
+import vn.edu.iuh.fit.services.LoginLogService;
 import vn.edu.iuh.fit.services.RefreshTokenService;
 import vn.edu.iuh.fit.services.UserService;
+import vn.edu.iuh.fit.utils.FormatPhoneNumber;
 import vn.edu.iuh.fit.utils.JwtTokenUtil;
 
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ import java.util.List;
  * @date:   16/03/2025
  * @version:    1.0
  */
+
 @Service
 public class AuthServiceImpl implements AuthService {
     @Autowired
@@ -59,6 +62,9 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
+    @Autowired
+    private LoginLogService loginLogService;
+
     @Override
     public boolean signUp(SignUpRequest signUpRequest) {
         if (userService.existsByPhone(signUpRequest.getPhone())) {
@@ -73,11 +79,11 @@ public class AuthServiceImpl implements AuthService {
         List<String> assignedRoles = determineRoles(signUpRequest.getRoles());
         System.out.println("Assigned roles: " + assignedRoles);
         return User.builder()
-                .firstName(signUpRequest.getFirstName())
-                .lastName(signUpRequest.getLastName())
-                .phone(signUpRequest.getPhone())
+                .displayName(signUpRequest.getDisplayName())
+                .phone(FormatPhoneNumber.formatPhoneNumberTo84(signUpRequest.getPhone()))
                 .password(passwordEncoder.encode(signUpRequest.getPassword()))
                 .enabled(true)
+                .dob(signUpRequest.getDob())
                 .roles(assignedRoles)
                 .build();
     }
@@ -120,7 +126,12 @@ public class AuthServiceImpl implements AuthService {
                 .expiresDate(jwtTokenUtil.generateExpirationDate())
                 .revoked(false)
                 .build();
+
+        // Lưu thông tin đăng nhập vào lịch sử
+        loginLogService.saveLogin(userId);
+
         refreshTokenService.saveRefreshToken(token);
+
         return SignInResponse.builder()
                 .id(userId.toHexString())
                 .token(accessToken)
@@ -170,7 +181,10 @@ public class AuthServiceImpl implements AuthService {
             }
 
             storedRefreshToken.setRevoked(true);  // Thu hồi refresh token
+            loginLogService.saveLogout(userId); // Lưu thông tin đăng xuất vào lịch sử
+
             refreshTokenService.saveRefreshToken(storedRefreshToken);
+
 
             SecurityContextHolder.clearContext();
         } catch (JwtException e) {

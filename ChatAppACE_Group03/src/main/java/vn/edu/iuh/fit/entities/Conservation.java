@@ -10,8 +10,12 @@ import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 /*
  * @description:
@@ -25,11 +29,17 @@ import java.time.Instant;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "groups")
-public class Group {
+@Document(collection = "conservation")
+public class Conservation {
     @Id
     private ObjectId id;
-    private String groupName;
-    private ObjectId ownerId;
+    private String name;
+    private String avatar;
+    @Field("is_group")
+    private boolean isGroup;
+    private ObjectId lastMessageId; // Lưu messageId cuối cùng
     private Instant createdAt;
+
+    private Set<ObjectId> memberId; // Lưu danh sách memberId
+    private Set<ObjectId> messageIds = new HashSet<>(); // Lưu danh sách messageId
 }
