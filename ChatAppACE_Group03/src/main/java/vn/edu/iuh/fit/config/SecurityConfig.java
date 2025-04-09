@@ -62,6 +62,9 @@ public class SecurityConfig {
     @Autowired
     private RefreshTokenService refreshTokenService;
 
+    @Autowired
+    private JwtBeansConfig jwtBeansConfig;
+
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/sign-up",
             "/api/v1/auth/sign-in",
@@ -82,16 +85,6 @@ public class SecurityConfig {
                 .passwordEncoder(passwordEncoder);
     }
     @Bean
-    JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withPublicKey(rsaKeyRecord.rsaPublicKey()).build();
-    }
-    @Bean
-    JwtEncoder jwtEncoder() {
-        JWK jwk = new RSAKey.Builder(rsaKeyRecord.rsaPublicKey()).privateKey(rsaKeyRecord.rsaPrivateKey()).build();
-        JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(new JWKSet(jwk));
-        return new NimbusJwtEncoder(jwkSource);
-    }
-    @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
         grantedAuthoritiesConverter.setAuthorityPrefix(""); // Không thêm "SCOPE_"
@@ -110,11 +103,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers( PUBLIC_ENDPOINTS).permitAll()  // Cho phép truy cập không cần xác thực
                         .requestMatchers("/api/v1/dashboard/**").authenticated()
+                        .requestMatchers("/api/v1/user/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
-                .addFilterBefore(new JwtAccessTokenFilter(jwtDecoder(), jwtTokenUtil, userDetailsService, refreshTokenService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAccessTokenFilter(jwtBeansConfig.jwtDecoder(), jwtTokenUtil, userDetailsService, refreshTokenService), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
                         .accessDeniedHandler(new BearerTokenAccessDeniedHandler())

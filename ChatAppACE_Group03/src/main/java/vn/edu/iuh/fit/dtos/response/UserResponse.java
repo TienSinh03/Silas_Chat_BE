@@ -8,9 +8,14 @@ package vn.edu.iuh.fit.dtos.response;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import org.bson.types.ObjectId;
+import vn.edu.iuh.fit.utils.ObjectIdDeserializer;
+import vn.edu.iuh.fit.utils.ObjectIdSerializer;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,8 +32,13 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserResponse {
+public class UserResponse implements Serializable {
+
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    @JsonDeserialize(using = ObjectIdDeserializer.class)
     private ObjectId id;
+
+
     @JsonProperty("display_name")
     private String displayName;
     private String password;
