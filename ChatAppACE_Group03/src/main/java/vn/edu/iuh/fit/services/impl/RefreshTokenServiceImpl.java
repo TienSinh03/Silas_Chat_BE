@@ -10,6 +10,7 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.entities.RefreshToken;
+import vn.edu.iuh.fit.exceptions.TokenNotFoundException;
 import vn.edu.iuh.fit.repositories.RefreshTokenRepository;
 import vn.edu.iuh.fit.services.RefreshTokenService;
 
@@ -32,7 +33,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public RefreshToken findByToken(String token) {
-        return refreshTokenRepository.findByRefreshToken(token).orElse(null);
+        return refreshTokenRepository.findByRefreshToken(token).orElseThrow(() -> new TokenNotFoundException("Không tìm thấy refresh token: " + token));
     }
 
     @Override
@@ -45,6 +46,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Override
     public String getRefreshTokenByUser(ObjectId userId) {
         RefreshToken refreshToken = refreshTokenRepository.findTopByUserIdAndRevokedFalseOrderByExpiresDateDesc(userId);
+        if (refreshToken == null) return null;
         System.out.println("Token: " + refreshToken.getRefreshToken());
         return refreshToken != null ? refreshToken.getRefreshToken() : null;
     }

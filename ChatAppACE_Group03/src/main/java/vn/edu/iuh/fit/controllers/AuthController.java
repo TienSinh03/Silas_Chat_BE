@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2025 IUH. All rights reserved.
  */
-      
+
 package vn.edu.iuh.fit.controllers;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -18,13 +18,15 @@ import vn.edu.iuh.fit.dtos.request.SignUpRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.dtos.response.RefreshTokenResponse;
 import vn.edu.iuh.fit.dtos.response.SignInResponse;
+import vn.edu.iuh.fit.exceptions.MissingTokenException;
+import vn.edu.iuh.fit.exceptions.UserAlreadyExistsException;
 import vn.edu.iuh.fit.services.AuthService;
 import vn.edu.iuh.fit.services.UserService;
 
 import java.util.Map;
 
 /*
- * @description: 
+ * @description:
  * @author: Tran Hien Vinh
  * @date:   16/03/2025
  * @version:    1.0
@@ -37,7 +39,7 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-//    Request body:
+    //    Request body:
 /*
     {
             "firstName":"Anh Dat",
@@ -50,30 +52,16 @@ public class AuthController {
 */
     @PostMapping("/sign-up")
     public ResponseEntity<ApiResponse<?>> signUp(@RequestBody @Valid SignUpRequest signUpRequest) {
-        try {
-            if (authService.signUp(signUpRequest)) {
-                return ResponseEntity.ok(ApiResponse.builder()
-                        .status("SUCCESS")
-                        .response(null)
-                        .message("Sign up successfully!")
-                        .build());
-            }
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.builder()
-                    .status("ERROR")
-                    .response(null)
-                    .message(e.getMessage())
-                    .build());
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.builder()
-                .status("ERROR")
+
+        authService.signUp(signUpRequest);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status("SUCCESS")
                 .response(null)
-                .message("Sign up failed!")
+                .message("Sign up successfully!")
                 .build());
     }
 
-//    Request body:
+    //    Request body:
 /*
     {
         "phone":"phoneNumber",
@@ -82,43 +70,26 @@ public class AuthController {
 */
     @PostMapping("/sign-in")
     public ResponseEntity<ApiResponse<?>> signIn(@RequestBody @Valid SignInRequest signInRequest) {
-        try {
-            SignInResponse signInResponse = authService.signIn(signInRequest);
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .status("SUCCESS")
-                    .response(signInResponse)
-                    .message("Sign in successfully!")
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.builder()
-                    .status("ERROR")
-                    .response(null)
-                    .message(e.getMessage())
-                    .build());
-        }
+        SignInResponse signInResponse = authService.signIn(signInRequest);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status("SUCCESS")
+                .response(signInResponse)
+                .message("Sign in successfully!")
+                .build());
     }
 
-// Authorization: Bearer Token <access_token>
+    // Authorization: Bearer Token <access_token>
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(@RequestHeader("Authorization") String accessToken) {
-        try {
-            authService.logout(accessToken);
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .status("SUCCESS")
-                    .response(null)
-                    .message("Logout successfully!")
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.builder()
-                    .status("ERROR")
-                    .response(null)
-                    .message(e.getMessage())
-                    .build());
-        }
+        authService.logout(accessToken);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status("SUCCESS")
+                .response(null)
+                .message("Logout successfully!")
+                .build());
     }
 
-// Request body:
+    // Request body:
 /*
         {
             "refreshToken": <refresh_token>
@@ -126,33 +97,20 @@ public class AuthController {
 */
     @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse<?>> refreshToken(@RequestBody Map<String, String> request) {
-        try {
-            String refreshToken = request.get("refreshToken");
-            if (refreshToken == null || refreshToken.isEmpty()) {
-                return ResponseEntity
-                        .status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.builder()
-                                .status("ERROR")
-                                .response(null)
-                                .message("Missing Refresh Token in request!")
-                                .build());
-            }
-            RefreshTokenResponse response = authService.refreshToken(refreshToken);
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .status("SUCCESS")
-                    .response(response)
-                    .message("Token refreshed successfully!")
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.builder()
-                    .status("ERROR")
-                    .response(null)
-                    .message(e.getMessage())
-                    .build());
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            throw new MissingTokenException("Missing Refresh Token in request!");
         }
+
+        RefreshTokenResponse response = authService.refreshToken(refreshToken);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status("SUCCESS")
+                .response(response)
+                .message("Token refreshed successfully!")
+                .build());
     }
 
-// Request body:
+    // Request body:
 /*
         {
             "idToken": <id_token>
@@ -160,26 +118,21 @@ public class AuthController {
  */
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<?>> verifyOtp(@RequestBody Map<String, String> request) {
+
+        String idToken = request.get("idToken");
+
+        if (idToken == null || idToken.isEmpty()) {
+            throw new MissingTokenException("Thiếu ID Token trong request!");
+        }
+
         try {
-            String idToken = request.get("idToken");
-
-            if (idToken == null || idToken.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.builder()
-                        .status("ERROR")
-                        .message("Thiếu ID Token trong request!")
-                        .build());
-            }
-
             FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
 
             String phoneNumber = decodedToken.getClaims().get("phone_number").toString();
 
             // Kiểm tra xem số điện thoại đã tồn tại chưa
             if (userService.existsByPhone(phoneNumber)) {
-                return ResponseEntity.badRequest().body(ApiResponse.builder()
-                        .status("ERROR")
-                        .message("Số điện thoại đã được sử dụng!")
-                        .build());
+                throw new UserAlreadyExistsException("Số điện thoại đã được sử dụng!");
             }
 
             return ResponseEntity.ok(ApiResponse.builder()
@@ -193,5 +146,55 @@ public class AuthController {
                     .build());
         }
     }
+    // Request body:
+/*
+    {
+        "idToken": "<firebase_id_token>",
+        "newPassword": "yourNewPassword123"
+    }
+*/
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<?>> resetPassword(@RequestBody Map<String, String> request) {
+        String idToken = request.get("idToken");
+        String newPassword = request.get("newPassword");
+
+        if (idToken == null || idToken.isEmpty()) {
+            throw new MissingTokenException("Thiếu ID Token trong request!");
+        }
+
+        if (newPassword == null || newPassword.length() < 8) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Mật khẩu mới phải có ít nhất 8 ký tự!")
+                    .build());
+        }
+
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            System.out.println("Decoded Token: " + decodedToken.getClaims());
+            String phoneNumber = decodedToken.getClaims().get("phone_number").toString();
+
+
+            // Kiểm tra xem số điện thoại đã tồn tại chưa
+            if (!userService.existsByPhone(phoneNumber)) {
+                throw new UserAlreadyExistsException("Số điện thoại không tồn tại!");
+            }
+
+            // Cập nhật mật khẩu
+            userService.updatePassword(phoneNumber, newPassword);
+
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Đặt lại mật khẩu thành công cho số điện thoại: " + phoneNumber)
+                    .build());
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Đặt lại mật khẩu thất bại: " + e.getMessage())
+                    .build());
+        }
+    }
+
 
 }
