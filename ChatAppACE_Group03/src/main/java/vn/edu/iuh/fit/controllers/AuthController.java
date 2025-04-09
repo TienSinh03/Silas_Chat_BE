@@ -52,6 +52,7 @@ public class AuthController {
 */
     @PostMapping("/sign-up")
     public ResponseEntity<ApiResponse<?>> signUp(@RequestBody @Valid SignUpRequest signUpRequest) {
+
         authService.signUp(signUpRequest);
         return ResponseEntity.ok(ApiResponse.builder()
                 .status("SUCCESS")
@@ -145,5 +146,55 @@ public class AuthController {
                     .build());
         }
     }
+    // Request body:
+/*
+    {
+        "idToken": "<firebase_id_token>",
+        "newPassword": "yourNewPassword123"
+    }
+*/
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<?>> resetPassword(@RequestBody Map<String, String> request) {
+        String idToken = request.get("idToken");
+        String newPassword = request.get("newPassword");
+
+        if (idToken == null || idToken.isEmpty()) {
+            throw new MissingTokenException("Thiếu ID Token trong request!");
+        }
+
+        if (newPassword == null || newPassword.length() < 8) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Mật khẩu mới phải có ít nhất 8 ký tự!")
+                    .build());
+        }
+
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            System.out.println("Decoded Token: " + decodedToken.getClaims());
+            String phoneNumber = decodedToken.getClaims().get("phone_number").toString();
+
+
+            // Kiểm tra xem số điện thoại đã tồn tại chưa
+            if (!userService.existsByPhone(phoneNumber)) {
+                throw new UserAlreadyExistsException("Số điện thoại không tồn tại!");
+            }
+
+            // Cập nhật mật khẩu
+            userService.updatePassword(phoneNumber, newPassword);
+
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Đặt lại mật khẩu thành công cho số điện thoại: " + phoneNumber)
+                    .build());
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Đặt lại mật khẩu thất bại: " + e.getMessage())
+                    .build());
+        }
+    }
+
 
 }

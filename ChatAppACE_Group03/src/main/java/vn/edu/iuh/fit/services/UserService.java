@@ -20,4 +20,5 @@ public interface UserService {
     boolean existsByPhone(String phone);
     void save(User user);
     boolean isPasswordValid(String phone, String password);
+    void updatePassword(String phone, String newPassword);
 }

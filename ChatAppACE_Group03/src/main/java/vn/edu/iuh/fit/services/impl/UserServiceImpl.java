@@ -66,4 +66,13 @@ public class UserServiceImpl implements UserService {
 
         return true;
     }
+
+    @Override
+    public void updatePassword(String phone, String newPassword) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng với số điện thoại: " + phone));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }
