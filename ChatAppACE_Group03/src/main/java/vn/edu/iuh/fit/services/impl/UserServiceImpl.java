@@ -8,11 +8,16 @@ package vn.edu.iuh.fit.services.impl;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.User;
+import vn.edu.iuh.fit.exceptions.InvalidPasswordException;
+import vn.edu.iuh.fit.exceptions.UserNotFoundException;
 import vn.edu.iuh.fit.repositories.UserRepository;
 import vn.edu.iuh.fit.services.UserService;
+
+import java.util.Optional;
 
 /*
  * @description:
@@ -27,6 +32,8 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private ModelMapper modelMapper;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
 
     private UserResponse convertToDto(User user) {
@@ -34,7 +41,7 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public UserResponse getUserByPhone(String phone) {
-        User user = userRepository.findByPhone(phone).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByPhone(phone).orElseThrow(() ->new UserNotFoundException("Không tìm thấy người dùng với số điện thoại: " + phone));
         return convertToDto(user);
     }
 
@@ -46,5 +53,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public void save(User user) {
         userRepository.save(user);
+    }
+
+    @Override
+    public boolean isPasswordValid(String phone, String password) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng với số điện thoại: " + phone));
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new InvalidPasswordException("Mật khẩu không chính xác.");
+        }
+
+        return true;
     }
 }

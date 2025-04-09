@@ -26,6 +26,7 @@ import vn.edu.iuh.fit.dtos.response.RefreshTokenResponse;
 import vn.edu.iuh.fit.dtos.response.SignInResponse;
 import vn.edu.iuh.fit.entities.RefreshToken;
 import vn.edu.iuh.fit.entities.User;
+import vn.edu.iuh.fit.exceptions.*;
 import vn.edu.iuh.fit.services.AuthService;
 import vn.edu.iuh.fit.services.LoginLogService;
 import vn.edu.iuh.fit.services.RefreshTokenService;
@@ -68,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public boolean signUp(SignUpRequest signUpRequest) {
         if (userService.existsByPhone(signUpRequest.getPhone())) {
-            return false;
+            throw new UserAlreadyExistsException("Số điện thoại đã được đăng ký.");
         }
         User user = createUser(signUpRequest);
         userService.save(user);
@@ -109,6 +110,13 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public SignInResponse signIn(SignInRequest signInRequest) {
+        if (!userService.existsByPhone(signInRequest.getPhone())) {
+            throw new UserNotFoundException("Số điện thoại không tồn tại.");
+        }
+
+        userService.isPasswordValid(signInRequest.getPhone(), signInRequest.getPassword());
+
+        // Xác thực người dùng
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(signInRequest.getPhone(), signInRequest.getPassword())
         );
@@ -145,7 +153,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(String accessToken) {
         if (accessToken == null || !accessToken.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("Token không hợp lệ hoặc không tồn tại.");
+            throw new MissingTokenException("Token không hợp lệ hoặc không tồn tại.");
         }
 
         String jwtToken = accessToken.substring(7);
@@ -159,14 +167,14 @@ public class AuthServiceImpl implements AuthService {
 
             boolean isAccessToken = decodedToken.getClaims().containsKey("roles");
             if (!isAccessToken) {
-                throw new IllegalArgumentException("Bạn đã truyền nhầm Refresh Token thay vì Access Token.");
+                throw new InvalidTokenException("Bạn đã truyền nhầm Refresh Token thay vì Access Token.");
             }
 
             UserPrincipal userPrincipal = (UserPrincipal) userDetailsService.loadUserByUsername(userName);
 
             ObjectId userId = userPrincipal.getUserResponse().getId();
             if (userId == null) {
-                throw new IllegalArgumentException("ID người dùng không hợp lệ.");
+                throw new TokenRevokedException("ID người dùng không hợp lệ.");
             }
 
             // Lấy refreshToken của user từ DB
@@ -176,9 +184,6 @@ public class AuthServiceImpl implements AuthService {
             }
 
             RefreshToken storedRefreshToken = refreshTokenService.findByToken(refreshToken);
-            if (storedRefreshToken == null) {
-                throw new IllegalArgumentException("Refresh token không hợp lệ hoặc không tồn tại.");
-            }
 
             storedRefreshToken.setRevoked(true);  // Thu hồi refresh token
             loginLogService.saveLogout(userId); // Lưu thông tin đăng xuất vào lịch sử
@@ -188,14 +193,14 @@ public class AuthServiceImpl implements AuthService {
 
             SecurityContextHolder.clearContext();
         } catch (JwtException e) {
-            throw new IllegalArgumentException("Token không hợp lệ.");
+            throw new InvalidTokenException("Token không hợp lệ.");
         }
     }
 
     @Override
     public RefreshTokenResponse refreshToken(String refreshToken) {
         if (refreshToken == null || refreshToken.isEmpty()) {
-            throw new IllegalArgumentException("Refresh token is required.");
+            throw new MissingTokenException("Refresh token không được để trống.");
         }
 
         try {
@@ -205,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
             // Kiểm tra token có bị thu hồi không
             RefreshToken storedRefreshToken = refreshTokenService.findByToken(refreshToken);
             if (storedRefreshToken == null || storedRefreshToken.isRevoked()) {
-                throw new IllegalArgumentException("Refresh token is revoked. Please log in again.");
+                throw new TokenRevokedException("Refresh token đã bị thu hồi. Vui lòng đăng nhập lại.");
             }
 
             // Lấy danh sách refresh token hợp lệ của user
@@ -213,11 +218,15 @@ public class AuthServiceImpl implements AuthService {
 
             // Nếu user không còn refresh token hợp lệ => buộc đăng xuất
             if (validRefreshTokens.isEmpty()) {
-                throw new IllegalArgumentException("No valid refresh token available. Please log in again.");
+                throw new TokenRevokedException("Không còn refresh token hợp lệ. Vui lòng đăng nhập lại.");
             }
 
             // Lấy user từ database
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (userDetails == null) {
+                throw new UserNotFoundException("Không tìm thấy người dùng từ token.");
+            }
+
             UserPrincipal userPrincipal = (UserPrincipal) userDetails;
 
             // Tạo access token mới
@@ -227,8 +236,8 @@ public class AuthServiceImpl implements AuthService {
             );
 
             return new RefreshTokenResponse(newAccessToken);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid refresh token.");
+        } catch (JwtException  e) {
+            throw new InvalidTokenException("Refresh token không hợp lệ.");
         }
     }
 }
