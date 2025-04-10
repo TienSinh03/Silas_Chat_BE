@@ -16,6 +16,9 @@ public class FormatPhoneNumber {
         if (phoneNumber.startsWith("0")) {
             return "+84" + phoneNumber.substring(1);
         }
+        if(phoneNumber.startsWith("+840")) {
+            return "+84" + phoneNumber.substring(4);
+        }
         return phoneNumber; // Nếu đã có +84 thì giữ nguyên
     }
 

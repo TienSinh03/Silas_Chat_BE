@@ -21,6 +21,7 @@ import vn.edu.iuh.fit.dtos.response.SignInResponse;
 import vn.edu.iuh.fit.exceptions.MissingTokenException;
 import vn.edu.iuh.fit.exceptions.UserAlreadyExistsException;
 import vn.edu.iuh.fit.services.AuthService;
+import vn.edu.iuh.fit.services.SmsService;
 import vn.edu.iuh.fit.services.UserService;
 
 import java.util.Map;
@@ -38,6 +39,9 @@ public class AuthController {
     private AuthService authService;
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SmsService smsService;
 
     //    Request body:
 /*
@@ -194,6 +198,23 @@ public class AuthController {
                     .message("Đặt lại mật khẩu thất bại: " + e.getMessage())
                     .build());
         }
+    }
+
+    @PostMapping("/send-otp")
+    public ResponseEntity<ApiResponse<?>> sendOtp(@RequestParam String phoneNumber) {
+        try {
+            smsService.sendOtp(phoneNumber);
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("OTP đã được gửi đến số điện thoại: " + phoneNumber)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Gửi OTP thất bại: " + e.getMessage())
+                    .build());
+        }
+
     }
 
 
