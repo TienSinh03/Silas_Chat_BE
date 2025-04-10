@@ -19,7 +19,13 @@ public class FormatPhoneNumber {
         if(phoneNumber.startsWith("+840")) {
             return "+84" + phoneNumber.substring(4);
         }
-        return phoneNumber; // Nếu đã có +84 thì giữ nguyên
+        if(phoneNumber.startsWith("84")) {
+
+            return "+" + phoneNumber; // Nếu đã có +84 thì giữ nguyên
+        }
+        System.out.println("Phone number does not start with 0 or +840, returning original phone number: " + phoneNumber);
+
+        return phoneNumber;
     }
 
     public static String formatPhoneNumberTo0(String phoneNumber) {

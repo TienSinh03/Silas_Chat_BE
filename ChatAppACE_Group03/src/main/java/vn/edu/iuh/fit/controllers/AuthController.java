@@ -201,8 +201,9 @@ public class AuthController {
     }
 
     @PostMapping("/send-otp")
-    public ResponseEntity<ApiResponse<?>> sendOtp(@RequestParam String phoneNumber) {
+    public ResponseEntity<ApiResponse<?>> sendOtp(@RequestBody Map<String, String> request) {
         try {
+            String phoneNumber = request.get("phoneNumber");
             smsService.sendOtp(phoneNumber);
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
@@ -217,5 +218,29 @@ public class AuthController {
 
     }
 
+    @PostMapping("/verify-otp-sns")
+    public ResponseEntity<ApiResponse<?>> verifyOtp_Sns(@RequestBody Map<String, String> request) {
+        String phoneNumber = request.get("phoneNumber");
+        String otp = request.get("otp");
 
+        if (userService.existsByPhone(phoneNumber)) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Số điện thoại đã tồn tại!")
+                    .build());
+        }
+
+        boolean isValid = smsService.verifyOtp(phoneNumber, otp);
+        if(isValid) {
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Xác thực thành công! Số điện thoại: " + phoneNumber)
+                    .build());
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Xác thực OTP thất bại!")
+                    .build());
+        }
+    }
 }
