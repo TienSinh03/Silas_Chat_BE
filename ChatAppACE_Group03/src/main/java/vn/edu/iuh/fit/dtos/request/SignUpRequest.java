@@ -9,6 +9,7 @@ package vn.edu.iuh.fit.dtos.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -43,9 +44,12 @@ public class SignUpRequest implements Serializable {
     @Size(min=8, message = "Mật khẩu phải có ít nhất 8 ký tự")
     private String password;
 
+    private String gender;
+
     String avatarUrl="";
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @Past(message = "Ngày sinh phải trước ngày hiện tại")
     LocalDate dob;
     List<String> roles;
 
@@ -94,5 +98,13 @@ public class SignUpRequest implements Serializable {
     }
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 }

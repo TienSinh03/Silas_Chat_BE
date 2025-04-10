@@ -86,6 +86,7 @@ public class AuthServiceImpl implements AuthService {
                 .enabled(true)
                 .dob(signUpRequest.getDob())
                 .avatar(signUpRequest.getAvatarUrl())
+                .gender(signUpRequest.getGender())
                 .roles(assignedRoles)
                 .build();
     }
@@ -111,15 +112,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public SignInResponse signIn(SignInRequest signInRequest) {
-        if (!userService.existsByPhone(signInRequest.getPhone())) {
+        String formattedPhone = FormatPhoneNumber.formatPhoneNumberTo84(signInRequest.getPhone());
+        if (!userService.existsByPhone(formattedPhone)) {
             throw new UserNotFoundException("Số điện thoại không tồn tại.");
         }
 
-        userService.isPasswordValid(signInRequest.getPhone(), signInRequest.getPassword());
+        userService.isPasswordValid(formattedPhone, signInRequest.getPassword());
 
         // Xác thực người dùng
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(signInRequest.getPhone(), signInRequest.getPassword())
+                new UsernamePasswordAuthenticationToken(formattedPhone, signInRequest.getPassword())
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);

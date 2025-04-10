@@ -88,6 +88,8 @@ public class AuthController {
             @RequestPart("signUpRequest")  String signUpRequestJson,
             @RequestPart(value = "avatar", required = false) MultipartFile avatar) {
 
+        System.out.println("signUpRequestJson: " + signUpRequestJson);
+
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         SignUpRequest signUpRequest;
@@ -244,7 +246,10 @@ public class AuthController {
 
             // Kiểm tra xem số điện thoại đã tồn tại chưa
             if (!userService.existsByPhone(phoneNumber)) {
-                throw new UserAlreadyExistsException("Số điện thoại không tồn tại!");
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("ERROR")
+                        .message("Số điện thoại không tồn tại!")
+                        .build());
             }
 
             // Cập nhật mật khẩu
@@ -285,13 +290,6 @@ public class AuthController {
     public ResponseEntity<ApiResponse<?>> verifyOtp_Sns(@RequestBody Map<String, String> request) {
         String phoneNumber = request.get("phoneNumber");
         String otp = request.get("otp");
-
-        if (userService.existsByPhone(phoneNumber)) {
-            return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .status("ERROR")
-                    .message("Số điện thoại đã tồn tại!")
-                    .build());
-        }
 
         boolean isValid = smsService.verifyOtp(phoneNumber, otp);
         if(isValid) {

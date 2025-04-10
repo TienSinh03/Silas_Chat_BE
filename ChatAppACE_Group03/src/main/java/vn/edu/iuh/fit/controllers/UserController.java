@@ -6,16 +6,26 @@
 
 package vn.edu.iuh.fit.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import vn.edu.iuh.fit.dtos.request.SignUpRequest;
 import vn.edu.iuh.fit.dtos.request.UpdateUserRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
+import vn.edu.iuh.fit.services.CloudinaryService;
 import vn.edu.iuh.fit.services.UserService;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /*
  * @description:
@@ -28,6 +38,12 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private Validator validator;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<?>> getCurrentUser(@RequestHeader("Authorization") String token) {
@@ -43,11 +59,47 @@ public class UserController {
         }
     }
 
-    @PutMapping("/update")
-    public ResponseEntity<ApiResponse<?>> updateUser(@RequestBody UpdateUserRequest req, @RequestHeader("Authorization") String token) {
+    @PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> updateUser(
+            @RequestPart("request") String reqJson,
+            @RequestPart(value = "avatar", required = false) MultipartFile avatar ,
+            @RequestHeader("Authorization") String token)
+    {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        UpdateUserRequest requestUpdate = null;
+        try {
+            requestUpdate = objectMapper.readValue(reqJson, UpdateUserRequest.class);
+            String avatarUrl = null;
+            if(avatar != null && !avatar.isEmpty()) {
+                avatarUrl = cloudinaryService.uploadImage(avatar);
+                requestUpdate.setAvatar(avatarUrl);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder()
+                            .status("FAILED")
+                            .message("Invalid request format")
+                            .build());
+        }
+
+        // Validate the request
+        Set<ConstraintViolation<UpdateUserRequest>> violations = validator.validate(requestUpdate);
+        if(!violations.isEmpty()) {
+            Map<String, Object> errors = new HashMap<>();
+            violations.forEach(violation -> {
+                errors.put(violation.getPropertyPath().toString(), violation.getMessage());
+            });
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Validation failed")
+                    .response(errors)
+                    .build());
+        }
+
         try {
             UserResponse user = userService.getCurrentUser(token);
-            UserResponse userUpdate = userService.updateUser(user.getId(), req);
+            UserResponse userUpdate = userService.updateUser(user.getId(), requestUpdate);
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Update user successfully").response(userUpdate).build());
         } catch (Exception e) {
             return ResponseEntity.ok(

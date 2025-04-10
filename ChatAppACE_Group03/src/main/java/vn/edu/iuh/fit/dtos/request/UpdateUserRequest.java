@@ -8,6 +8,8 @@ package vn.edu.iuh.fit.dtos.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,11 +27,13 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class UpdateUserRequest implements java.io.Serializable {
+
     @JsonProperty("display_name")
     private String displayName;
     private String gender;
 
+    @Past(message = "Ngày sinh phải trước ngày hiện tại")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dob;
-    private String avatar;
+    private String avatar="";
 }
