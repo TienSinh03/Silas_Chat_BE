@@ -115,7 +115,7 @@ public class UserServiceImpl implements UserService {
             user.setGender(request.getGender());
         }
 
-        if (request.getAvatar() != null) {
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
             user.setAvatar(request.getAvatar());
         }
 
