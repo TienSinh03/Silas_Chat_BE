@@ -37,6 +37,9 @@ dependencies {
 	implementation 'org.modelmapper:modelmapper:3.2.1'
 	// https://mvnrepository.com/artifact/com.google.firebase/firebase-admin
 	implementation 'com.google.firebase:firebase-admin:9.4.3'
+
+	// AWS SNS
+	implementation 'software.amazon.awssdk:sns:2.31.9'
 }
 
 tasks.named('test') {

@@ -21,6 +21,7 @@ import vn.edu.iuh.fit.dtos.response.SignInResponse;
 import vn.edu.iuh.fit.exceptions.MissingTokenException;
 import vn.edu.iuh.fit.exceptions.UserAlreadyExistsException;
 import vn.edu.iuh.fit.services.AuthService;
+import vn.edu.iuh.fit.services.SmsService;
 import vn.edu.iuh.fit.services.UserService;
 
 import java.util.Map;
@@ -38,6 +39,9 @@ public class AuthController {
     private AuthService authService;
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SmsService smsService;
 
     //    Request body:
 /*
@@ -196,5 +200,47 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/send-otp")
+    public ResponseEntity<ApiResponse<?>> sendOtp(@RequestBody Map<String, String> request) {
+        try {
+            String phoneNumber = request.get("phoneNumber");
+            smsService.sendOtp(phoneNumber);
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("OTP đã được gửi đến số điện thoại: " + phoneNumber)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Gửi OTP thất bại: " + e.getMessage())
+                    .build());
+        }
 
+    }
+
+    @PostMapping("/verify-otp-sns")
+    public ResponseEntity<ApiResponse<?>> verifyOtp_Sns(@RequestBody Map<String, String> request) {
+        String phoneNumber = request.get("phoneNumber");
+        String otp = request.get("otp");
+
+        if (userService.existsByPhone(phoneNumber)) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Số điện thoại đã tồn tại!")
+                    .build());
+        }
+
+        boolean isValid = smsService.verifyOtp(phoneNumber, otp);
+        if(isValid) {
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Xác thực thành công! Số điện thoại: " + phoneNumber)
+                    .build());
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Xác thực OTP thất bại!")
+                    .build());
+        }
+    }
 }
