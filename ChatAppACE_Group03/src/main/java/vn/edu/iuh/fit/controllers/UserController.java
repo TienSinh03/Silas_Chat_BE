@@ -59,12 +59,13 @@ public class UserController {
         }
     }
 
-    @PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/me/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> updateUser(
             @RequestPart("request") String reqJson,
             @RequestPart(value = "avatar", required = false) MultipartFile avatar ,
             @RequestHeader("Authorization") String token)
     {
+        System.out.println("Request update user: " + reqJson);
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         UpdateUserRequest requestUpdate = null;
@@ -98,6 +99,7 @@ public class UserController {
         }
 
         try {
+            System.out.println("Request update: " + requestUpdate.toString() + " token: " + token);
             UserResponse user = userService.getCurrentUser(token);
             UserResponse userUpdate = userService.updateUser(user.getId(), requestUpdate);
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Update user successfully").response(userUpdate).build());
