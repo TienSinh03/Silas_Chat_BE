@@ -6,13 +6,19 @@
 
 package vn.edu.iuh.fit.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.dtos.request.SignInRequest;
 import vn.edu.iuh.fit.dtos.request.SignUpRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
@@ -21,10 +27,13 @@ import vn.edu.iuh.fit.dtos.response.SignInResponse;
 import vn.edu.iuh.fit.exceptions.MissingTokenException;
 import vn.edu.iuh.fit.exceptions.UserAlreadyExistsException;
 import vn.edu.iuh.fit.services.AuthService;
+import vn.edu.iuh.fit.services.CloudinaryService;
 import vn.edu.iuh.fit.services.SmsService;
 import vn.edu.iuh.fit.services.UserService;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /*
  * @description:
@@ -43,21 +52,75 @@ public class AuthController {
     @Autowired
     private SmsService smsService;
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private Validator validator;
+
     //    Request body:
 /*
     {
-            "firstName":"Anh Dat",
-            "lastName":"Le",
-            "phone":"+840862435435",
+            "display_name":"Anh Dat",
+            "phone":"+84036154587",
             "password":"12345678",
+            "dob": "2003-01-15",
             "roles":[
-             ]
+            ]
     }
 */
-    @PostMapping("/sign-up")
-    public ResponseEntity<ApiResponse<?>> signUp(@RequestBody @Valid SignUpRequest signUpRequest) {
+
+    /**
+     * test api trong postman
+     * phan header: Content-Type: multipart/form-data
+     * phan body: form-data (thay vi chon raw thi chon form-data)
+     * chon key 1 la signUpRequest, value la text(nhap theo dinh dang json) cua product
+     * chon key 2 la avatar, value la file (chon file anh)
+     *
+     * Vi khong su dụng truc tiep @Valid nen phai dung Validator de validate
+     *
+     * @param signUpRequestJson
+     * @param avatar
+     * @return
+     */
+    @PostMapping(value = "/sign-up", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> signUp(
+            @RequestPart("signUpRequest")  String signUpRequestJson,
+            @RequestPart(value = "avatar", required = false) MultipartFile avatar) {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        SignUpRequest signUpRequest;
+        try {
+            signUpRequest = objectMapper.readValue(signUpRequestJson, SignUpRequest.class);
+            String avatarUrl = null;
+            if(avatar != null && !avatar.isEmpty()) {
+                avatarUrl = cloudinaryService.uploadImage(avatar);
+                signUpRequest.setAvatarUrl(avatarUrl);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Invalid request format: " + e.getMessage())
+                    .build());
+        }
+
+
+        Set<ConstraintViolation<SignUpRequest>> violations = validator.validate(signUpRequest);
+        if(!violations.isEmpty()) {
+            Map<String, Object> errors = new HashMap<>();
+            violations.forEach(violation -> {
+                errors.put(violation.getPropertyPath().toString(), violation.getMessage());
+            });
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Validation failed")
+                    .response(errors)
+                    .build());
+        }
 
         authService.signUp(signUpRequest);
+
         return ResponseEntity.ok(ApiResponse.builder()
                 .status("SUCCESS")
                 .response(null)

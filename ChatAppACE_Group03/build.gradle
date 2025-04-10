@@ -40,6 +40,11 @@ dependencies {
 
 	// AWS SNS
 	implementation 'software.amazon.awssdk:sns:2.31.9'
+
+	//Cloudinary
+	implementation 'com.cloudinary:cloudinary-http44:1.32.0'
+
+
 }
 
 tasks.named('test') {

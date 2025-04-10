@@ -85,6 +85,7 @@ public class AuthServiceImpl implements AuthService {
                 .password(passwordEncoder.encode(signUpRequest.getPassword()))
                 .enabled(true)
                 .dob(signUpRequest.getDob())
+                .avatar(signUpRequest.getAvatarUrl())
                 .roles(assignedRoles)
                 .build();
     }

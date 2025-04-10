@@ -57,31 +57,31 @@ public class SmsServiceImpl implements SmsService {
         System.out.println("OTP stored " + otpStore);
 
         // Này test thử lần rồi nhớ comment phần dưới lại chứ bi tính phí
-            Map<String, MessageAttributeValue> attribute = new HashMap<>();
-
-            // Thiết lập SenderID: Tên người gửi
-            attribute.put("AWS.SNS.SMS.SenderID", MessageAttributeValue.builder()
-                    .dataType("String")
-                    .stringValue("Chat")
-                    .build());
-
-            // Thiet lap SMS type
-            attribute.put("AWS.SNS.SMS.SMSType", MessageAttributeValue.builder()
-                    .dataType("String")
-                    .stringValue("Transactional") // Transactional: tin nhan giao dịch
-                    .build());
-
-            System.out.println("Sending OTP: " + otp);
-            System.out.println(formattedPhoneNumber);
-
-            // Gửi tin nhắn SMS
-            PublishRequest request = PublishRequest.builder()
-                    .message(message)
-                    .phoneNumber(formattedPhoneNumber)
-                    .messageAttributes(attribute)
-                    .build();
-
-            snsClient.publish(request);
+//            Map<String, MessageAttributeValue> attribute = new HashMap<>();
+//
+//            // Thiết lập SenderID: Tên người gửi
+//            attribute.put("AWS.SNS.SMS.SenderID", MessageAttributeValue.builder()
+//                    .dataType("String")
+//                    .stringValue("Chat")
+//                    .build());
+//
+//            // Thiet lap SMS type
+//            attribute.put("AWS.SNS.SMS.SMSType", MessageAttributeValue.builder()
+//                    .dataType("String")
+//                    .stringValue("Transactional") // Transactional: tin nhan giao dịch
+//                    .build());
+//
+//            System.out.println("Sending OTP: " + otp);
+//            System.out.println(formattedPhoneNumber);
+//
+//            // Gửi tin nhắn SMS
+//            PublishRequest request = PublishRequest.builder()
+//                    .message(message)
+//                    .phoneNumber(formattedPhoneNumber)
+//                    .messageAttributes(attribute)
+//                    .build();
+//
+//            snsClient.publish(request);
     }
 
     public boolean verifyOtp(String phoneNumber, String otp) {
