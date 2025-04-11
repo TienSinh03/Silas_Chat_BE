@@ -306,4 +306,43 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/reset-password-mobile")
+    public ResponseEntity<ApiResponse<?>> resetPasswordMobile(@RequestBody Map<String, String> request) {
+        String phoneNumber = request.get("phoneNumber");
+        String newPassword = request.get("newPassword");
+
+        System.out.println("Request reset password: " + request.toString() + " phoneNumber: " + phoneNumber + " newPassword: " + newPassword);
+
+        if (newPassword == null || newPassword.length() < 8) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Mật khẩu mới phải có ít nhất 8 ký tự!")
+                    .build());
+        }
+
+        try {
+
+            // Kiểm tra xem số điện thoại đã tồn tại chưa
+            if (!userService.existsByPhone(phoneNumber)) {
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("ERROR")
+                        .message("Số điện thoại không tồn tại!")
+                        .build());
+            }
+
+            // Cập nhật mật khẩu
+            userService.updatePassword(phoneNumber, newPassword);
+
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Đặt lại mật khẩu thành công cho số điện thoại: " + phoneNumber)
+                    .build());
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("ERROR")
+                    .message("Đặt lại mật khẩu thất bại: " + e.getMessage())
+                    .build());
+        }
+    }
 }
