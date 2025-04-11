@@ -68,7 +68,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean signUp(SignUpRequest signUpRequest) {
-        if (userService.existsByPhone(signUpRequest.getPhone())) {
+        if (userService.existsByPhone(FormatPhoneNumber.formatPhoneNumberTo84(signUpRequest.getPhone()))) {
             throw new UserAlreadyExistsException("Số điện thoại đã được đăng ký.");
         }
         User user = createUser(signUpRequest);

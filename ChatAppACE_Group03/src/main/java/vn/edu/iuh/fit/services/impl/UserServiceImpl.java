@@ -124,4 +124,20 @@ public class UserServiceImpl implements UserService {
         return this.convertToDto(user);
     }
 
+    @Override
+    public UserResponse changePassword(ObjectId userId, String oldPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng với ID: " + userId));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new InvalidPasswordException("Mật khẩu cũ không đúng.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        return convertToDto(user);
+    }
+
+
 }

@@ -27,4 +27,5 @@ public interface UserService {
     UserResponse getCurrentUser(String token);
 
     UserResponse updateUser(ObjectId userId, UpdateUserRequest request);
+    UserResponse changePassword(ObjectId userId, String oldPassword, String newPassword);
 }
