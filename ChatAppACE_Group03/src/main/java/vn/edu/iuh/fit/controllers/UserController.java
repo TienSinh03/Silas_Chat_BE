@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import vn.edu.iuh.fit.dtos.request.ChangePasswordRequest;
 import vn.edu.iuh.fit.dtos.request.SignUpRequest;
 import vn.edu.iuh.fit.dtos.request.UpdateUserRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
@@ -110,6 +111,28 @@ public class UserController {
                             .message(e.getMessage())
                             .build());
         }
-
     }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<?>> changePassword(@RequestBody ChangePasswordRequest request, @RequestHeader("Authorization") String token) {
+        try {
+            UserResponse currentUser = userService.getCurrentUser(token);
+            UserResponse updated = userService.changePassword(currentUser.getId(), request.getOldPassword(), request.getNewPassword());
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .status("SUCCESS")
+                            .message("Change password successfully")
+                            .response(updated)
+                            .build()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder()
+                            .status("FAILED")
+                            .message(e.getMessage())
+                            .build()
+                    );
+        }
+    }
+
 }
