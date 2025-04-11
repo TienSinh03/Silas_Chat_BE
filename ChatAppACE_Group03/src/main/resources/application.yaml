@@ -9,6 +9,10 @@ spring:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}  # Lấy từ .env
       database: chatapp
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 server:
   port: 8080
@@ -19,6 +23,8 @@ logging:
 rsa:
   rsa-private-key: ${RSA_PRIVATE_KEY}  # Lấy từ .env
   rsa-public-key: ${RSA_PUBLIC_KEY} # Lấy từ .env
+
+
 
 aws:
   region: ${AWS_REGION}
