@@ -22,4 +22,5 @@ public interface AuthService {
     SignInResponse signIn(SignInRequest signInRequest);
     void logout(String token);
     RefreshTokenResponse refreshToken(String refreshToken);
+
 }

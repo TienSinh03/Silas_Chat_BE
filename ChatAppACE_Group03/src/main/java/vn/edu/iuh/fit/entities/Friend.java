@@ -7,11 +7,14 @@
 package vn.edu.iuh.fit.entities;
 
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import vn.edu.iuh.fit.enums.FriendStatus;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 /*
  * @description:
@@ -25,12 +28,13 @@ import java.time.Instant;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Document(collection = "friends")
 public class Friend {
     @Id
     private ObjectId id;
     private ObjectId userId;
     private ObjectId friendId;
-    private String status;
+    private FriendStatus status;
     private Instant createdAt;
 }

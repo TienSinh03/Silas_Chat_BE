@@ -6,6 +6,8 @@
 
 package vn.edu.iuh.fit.services;
 
+import org.bson.types.ObjectId;
+import vn.edu.iuh.fit.dtos.request.UpdateUserRequest;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.User;
 
@@ -19,4 +21,11 @@ public interface UserService {
     UserResponse getUserByPhone(String phone);
     boolean existsByPhone(String phone);
     void save(User user);
+    boolean isPasswordValid(String phone, String password);
+    void updatePassword(String phone, String newPassword);
+
+    UserResponse getCurrentUser(String token);
+
+    UserResponse updateUser(ObjectId userId, UpdateUserRequest request);
+    UserResponse changePassword(ObjectId userId, String oldPassword, String newPassword);
 }

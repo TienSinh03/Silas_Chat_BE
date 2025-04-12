@@ -29,6 +29,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-configuration-processor'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -37,6 +38,14 @@ dependencies {
 	implementation 'org.modelmapper:modelmapper:3.2.1'
 	// https://mvnrepository.com/artifact/com.google.firebase/firebase-admin
 	implementation 'com.google.firebase:firebase-admin:9.4.3'
+
+	// AWS SNS
+	implementation 'software.amazon.awssdk:sns:2.31.9'
+
+	//Cloudinary
+	implementation 'com.cloudinary:cloudinary-http44:1.32.0'
+
+
 }
 
 tasks.named('test') {
