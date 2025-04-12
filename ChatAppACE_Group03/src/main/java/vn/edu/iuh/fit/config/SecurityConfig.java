@@ -73,7 +73,8 @@ public class SecurityConfig {
             "/api/v1/auth/reset-password",
             "/api/v1/auth/send-otp",
             "/api/v1/auth/verify-otp-sns",
-            "/api/v1/auth/reset-password-mobile"
+            "/api/v1/auth/reset-password-mobile",
+            "/ws/**",
 
     };
 
