@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.dtos.request.ChangePasswordRequest;
@@ -46,10 +47,16 @@ public class UserController {
     @Autowired
     private Validator validator;
 
+    @Autowired
+    private SimpMessagingTemplate simpMessagingTemplate;
+
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<?>> getCurrentUser(@RequestHeader("Authorization") String token) {
         try {
             UserResponse response = userService.getCurrentUser(token);
+
+            simpMessagingTemplate.convertAndSend("/user/profile/" + response.getId(), response);
+
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Get current user").response(response).build());
         } catch (Exception e) {
             return ResponseEntity.ok(
@@ -103,6 +110,12 @@ public class UserController {
             System.out.println("Request update: " + requestUpdate.toString() + " token: " + token);
             UserResponse user = userService.getCurrentUser(token);
             UserResponse userUpdate = userService.updateUser(user.getId(), requestUpdate);
+
+            // Gui tin nhan den WebSocket
+            System.out.println("Sending to destination: /user/profile/" + user.getId());
+            System.out.println("Data: " + userUpdate);
+            simpMessagingTemplate.convertAndSend("/user/profile/" + user.getId(), userUpdate);
+
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Update user successfully").response(userUpdate).build());
         } catch (Exception e) {
             return ResponseEntity.ok(
