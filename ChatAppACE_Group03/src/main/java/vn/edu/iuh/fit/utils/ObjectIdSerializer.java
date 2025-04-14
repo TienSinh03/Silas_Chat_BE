@@ -24,7 +24,11 @@ import java.io.IOException;
  */
 public class ObjectIdSerializer extends JsonSerializer<ObjectId> {
     @Override
-    public void serialize(ObjectId objectId, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-        jsonGenerator.writeString(objectId.toHexString()); // Chuyen doi ObjectId sang String
+    public void serialize(ObjectId objectId, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        if (objectId != null) {
+            gen.writeString(objectId.toHexString());
+        } else {
+            gen.writeNull();
+        }
     }
 }
