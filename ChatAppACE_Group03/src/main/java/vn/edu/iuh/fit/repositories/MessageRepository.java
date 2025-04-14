@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.entities.File;
 import vn.edu.iuh.fit.entities.Message;
 
+import java.util.List;
+
 /*
  * @description:
  * @author: Tran Hien Vinh
@@ -20,4 +22,6 @@ import vn.edu.iuh.fit.entities.Message;
  */
 @Repository
 public interface MessageRepository extends MongoRepository<Message, ObjectId> {
+    List<Message> findByConversationIdOrderByTimestampAsc(ObjectId conversationId);
+    List<String> findDistinctSenderIdsByConversationId(String conversationId);
 }
