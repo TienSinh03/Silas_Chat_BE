@@ -10,13 +10,17 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.dtos.response.FriendResponse;
+import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.Friend;
+import vn.edu.iuh.fit.entities.FriendRequest;
 import vn.edu.iuh.fit.entities.User;
+import vn.edu.iuh.fit.exceptions.FriendRequestException;
 import vn.edu.iuh.fit.exceptions.UserNotFoundException;
 import vn.edu.iuh.fit.repositories.FileRepository;
 import vn.edu.iuh.fit.repositories.FriendRepository;
 import vn.edu.iuh.fit.repositories.UserRepository;
 import vn.edu.iuh.fit.services.FriendService;
+import vn.edu.iuh.fit.services.UserService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,6 +39,9 @@ public class FriendServiceImpl implements FriendService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * Lấy danh sách bạn bè của người dùng
@@ -102,5 +109,37 @@ public class FriendServiceImpl implements FriendService {
     public boolean isFriend(ObjectId userId, ObjectId friendId) {
         return friendRepository.findByUserIdAndFriendId(userId, friendId).isPresent() ||
                 friendRepository.findByUserIdAndFriendId(friendId, userId).isPresent();
+    }
+
+    /**
+     * Hủy kết bạn
+     * Kiem tra xem user va friendId co phai la ban be khong
+     * Kiem tra 2 luồng userId va friendId
+     * @param token user
+     * @param friendId friendId
+     * @return
+     */
+    @Override
+    public boolean unfriend(String token,ObjectId friendId) {
+        UserResponse user = userService.getCurrentUser(token);
+        if (user == null) {
+            throw new UserNotFoundException("User not found");
+        }
+
+        System.out.println("User: " + user.getId());
+        System.out.println("FriendId: " + friendId);
+
+        // Kiem tra xem user va friendId co phai la ban be khong
+        if(isFriend(user.getId(), friendId)) {
+            // Tim kiem ban be tuong ung voi userId va friendId
+           Optional<Friend> friend = friendRepository.findByUserIdAndFriendId(user.getId(), friendId)
+                    .or(() -> friendRepository.findByUserIdAndFriendId(friendId, user.getId()));
+
+           // Huy ket ban
+            friendRepository.delete(friend.get());
+            return true;
+        }
+
+        return false;
     }
 }

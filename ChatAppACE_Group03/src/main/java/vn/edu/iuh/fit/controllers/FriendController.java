@@ -134,4 +134,22 @@ public class FriendController {
                     .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
         }
     }
+
+    @PostMapping("/unfriend/{friendId}")
+    public ResponseEntity<ApiResponse<?>> unfriend(@RequestHeader("Authorization") String token,
+                                                   @PathVariable("friendId") ObjectId friendId) {
+        try {
+            System.out.println("Token: " + token);
+            System.out.println("Friend ID: " + friendId);
+            boolean isUnfriend = friendService.unfriend(token, friendId);
+            if(!isUnfriend) {
+                return ResponseEntity.status((HttpStatus.BAD_REQUEST))
+                        .body(ApiResponse.builder().status("FAILED").message("Failed to unfriend").build());
+            }
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Unfriend Successfully").response("").build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
+        }
+    }
 }
