@@ -6,11 +6,13 @@
 
 package vn.edu.iuh.fit.entities;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import vn.edu.iuh.fit.utils.ObjectIdSerializer;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -31,14 +33,20 @@ import java.util.Set;
 @Document(collection = "conversations")
 public class Conversation {
     @Id
+    @JsonSerialize(using = ObjectIdSerializer.class)
     private ObjectId id;
     private String name;
     private String avatar;
     @Field("is_group")
     private boolean isGroup;
+
     private ObjectId lastMessageId; // Lưu messageId cuối cùng
     private Instant createdAt;
 
-    private Set<ObjectId> memberId; // Lưu danh sách memberId
-    private Set<ObjectId> messageIds = new HashSet<>(); // Lưu danh sách messageId
+    @JsonSerialize(contentUsing = ObjectIdSerializer.class)
+    private Set<ObjectId> memberId;
+
+    @JsonSerialize(contentUsing = ObjectIdSerializer.class)
+    private Set<ObjectId> messageIds = new HashSet<>();
+
 }
