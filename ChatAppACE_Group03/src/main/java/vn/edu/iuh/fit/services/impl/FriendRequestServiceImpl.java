@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /*
  * @description:
@@ -69,7 +70,8 @@ public class FriendRequestServiceImpl implements FriendRequestService
 
     /**
      * Gửi lời mời kết bạn
-     * @param friendRequestReq
+     * @param token token user gui
+     * @param friendRequestReq thong tin nguoi nhan
      * @return
      */
     @Override
@@ -87,6 +89,8 @@ public class FriendRequestServiceImpl implements FriendRequestService
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new UserNotFoundException("Người nhận không tồn tại."));
 
+        // Kiểm tra xem người gửi và người nhận có phải là cùng một người không
+        // Đồng thời kiem tra xem lời mời đã tồn tại hay chưa
         if(friendRequestRepository.existsBySenderAndReceiver(sender.getId(), receiver.getId())) {
             throw new IllegalArgumentException("Lời mời đã được gửi trước đó.");
         }
@@ -105,9 +109,18 @@ public class FriendRequestServiceImpl implements FriendRequestService
 
     }
 
+    /**
+     * Chấp nhận lời mời kết bạn
+     * @param token token nguoi nhan
+     * @param requestId id yeu cau
+     * @return
+     */
     @Override
     public boolean acceptFriendRequest(String token, ObjectId requestId) {
         UserResponse user = userService.getCurrentUser(token);
+        if(user == null) {
+            throw new FriendRequestException("Người nhận không tồn tại.");
+        }
 
         FriendRequest friendRequest = friendRequestRepository.findById(requestId)
                 .orElseThrow(() -> new FriendRequestException("Lời mời không tồn tại."));
@@ -115,6 +128,11 @@ public class FriendRequestServiceImpl implements FriendRequestService
         // Kiểm tra trạng thái của lời mời
         if(friendRequest.getStatus() != RequestFriendStatus.PENDING) {
             throw new FriendRequestException("Lời mời đã được chấp nhận hoặc từ chối trước đó.");
+        }
+
+        // Kiểm tra xem người dùng có phải là người nhận không
+        if(!friendRequest.getReceiver().equals(user.getId())) {
+            throw new FriendRequestException("Bạn không có lời mời này.");
         }
 
         friendRequest.setStatus(RequestFriendStatus.ACCEPTED);
@@ -135,6 +153,12 @@ public class FriendRequestServiceImpl implements FriendRequestService
         return true;
     }
 
+    /**
+     * Từ chối lời mời kết bạn
+     * @param token
+     * @param requestId
+     * @return
+     */
     @Override
     public boolean rejectFriendRequest(String token, ObjectId requestId) {
         UserResponse user = userService.getCurrentUser(token);
@@ -148,6 +172,7 @@ public class FriendRequestServiceImpl implements FriendRequestService
             throw new FriendRequestException("Lời mời đã được chấp nhận hoặc từ chối trước đó.");
         }
 
+        // Kiểm tra xem người dùng có phải là người nhận không
         if(!friendRequest.getReceiver().equals(user.getId())) {
             throw new FriendRequestException("Bạn không có lời mời này.");
         }
@@ -157,33 +182,109 @@ public class FriendRequestServiceImpl implements FriendRequestService
         return true;
     }
 
+
+    /**
+     * Lấy danh sách lời mời kết bạn
+     * @param token token nguoi nhan
+     * @return
+     */
     @Override
     public List<FriendRequestResponse> getFriendRequests(String token) {
         UserResponse user = userService.getCurrentUser(token);
         if(user == null) {
-            throw new FriendRequestException("Người dùng không tồn tại.");
+            throw new FriendRequestException("Người nhận không tồn tại.");
         }
 
+        // Lấy danh sách lời mời kết bạn
         List<FriendRequest> friendRequests = friendRequestRepository.findByReceiverAndStatus(user.getId(), RequestFriendStatus.PENDING);
         if(friendRequests.isEmpty()) {
             return Collections.emptyList();
         }
 
-
-
         // Lấy danh sách người dùng từ danh sách friendRequests
         return friendRequests.stream()
                 .map(friendReq -> {
+                    // Lấy thông tin người gửi
                     User userSender = userRepository.findById(friendReq.getSender())
                             .orElseThrow(() -> new UserNotFoundException("Người gửi không tồn tại."));
+
                     FriendRequestResponse friendRequestResponse = new FriendRequestResponse();
                     friendRequestResponse.setRequestId(friendReq.getId());
-                    friendRequestResponse.setUserId(userSender.getId());
+                    friendRequestResponse.setUserId(userSender.getId()); // userid nguoi gui
                     friendRequestResponse.setAvatar(userSender.getAvatar());
                     friendRequestResponse.setDisplayName(userSender.getDisplayName());
                     return friendRequestResponse;
+
                 }).toList();
     }
 
+    /**
+     * Lấy danh sách lời mời đã gửi
+     * @param token token nguoi gui
+     * @return
+     */
+    @Override
+    public List<FriendRequestResponse> getSentFriendRequests(String token) {
 
+        UserResponse user = userService.getCurrentUser(token);
+        if(user == null) {
+            throw new FriendRequestException("Người dung không tồn tại.");
+        }
+
+        // Lấy danh sách lời mời đã gửi
+        List<FriendRequest> friendRequests = friendRequestRepository.findBySenderAndStatus(user.getId(), RequestFriendStatus.PENDING);
+
+        if(friendRequests.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Lấy danh sách người dùng đã gửi từ danh sách requests
+        return friendRequests.stream()
+                .map(requested -> {
+
+                    // Lấy thông tin người nhận
+                    User userReceiver = userRepository.findById(requested.getReceiver())
+                            .orElseThrow(() -> new UserNotFoundException("Người nhận không tồn tại."));
+
+                    FriendRequestResponse response = new FriendRequestResponse();
+                    response.setRequestId(requested.getId());
+                    response.setUserId(userReceiver.getId());
+                    response.setAvatar(userReceiver.getAvatar());
+                    response.setDisplayName(userReceiver.getDisplayName());
+                    return response;
+                }).collect(Collectors.toList());
+    }
+
+
+    /**
+     * Thu hồi lời mời kết bạn đã gửi
+     * @param token token nguoi gui
+     * @param requestId id yeu cau
+     * @return
+     */
+    @Override
+    public boolean  recallFriendRequestSent(String token, ObjectId requestId) {
+        UserResponse user = userService.getCurrentUser(token);
+        if(user == null) {
+            throw new FriendRequestException("Người dung không tồn tại.");
+        }
+
+        // Tìm lời mời kết bạn đã gửi
+        FriendRequest request = friendRequestRepository.findById(requestId)
+                .orElseThrow(() -> new FriendRequestException("Lời mời không tồn tại."));
+
+        // Kiểm tra xem người dùng có phải là người gửi không
+        if (!request.getSender().equals(user.getId())) {
+            throw new FriendRequestException("Bạn không có quyền thu hồi lời mời này.");
+        }
+
+        // Kiểm tra trạng thái của lời mời
+        if(request.getStatus() != RequestFriendStatus.PENDING) {
+            throw new FriendRequestException("Lời mời đã được chấp nhận hoặc từ chối trước đó.");
+        }
+
+        // Xóa lời mời kết bạn
+        friendRequestRepository.delete(request);
+        return true;
+    }
 }

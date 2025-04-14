@@ -40,8 +40,8 @@ public class FriendServiceImpl implements FriendService {
      * Lấy danh sách bạn bè của người dùng
      * Kiem tra friend dong thoi ca 2 chieu
      * findByUserId: Lay danh sach user tu user_id
-     * findByFriendId: Lay danh sach ban be tu friend
-     * @param userId
+     * findByFriendId: Lay danh sach friend tu user_id truyen vao
+     * @param userId userId can lay danh sach ban be
      * @return
      */
     @Override
@@ -52,7 +52,6 @@ public class FriendServiceImpl implements FriendService {
         }
 
         // Lấy danh sách bạn bè từ user_id
-        //Vi du: user_id = 1, friend_id = 2
         List<Friend> fromUserId = friendRepository.findByUserId(userId);
         System.out.println("fromUserId: " + fromUserId);
 
@@ -64,10 +63,12 @@ public class FriendServiceImpl implements FriendService {
         // Luu danh sach id cua ban be
         Set<ObjectId> friendIds = new HashSet<>();
 
+        // Luu danh sach friendid cua ban be tu user_id
         if(!fromUserId.isEmpty()) {
             friendIds.addAll(fromUserId.stream().map(Friend::getFriendId).filter(Objects::nonNull).toList());
         }
 
+        // Luu danh sach userid cua ban be tu friend_id
         if (!fromFriendId.isEmpty()) {
             friendIds.addAll(fromFriendId.stream().map(Friend::getUserId).filter(Objects::nonNull).toList());
         }
@@ -94,7 +95,6 @@ public class FriendServiceImpl implements FriendService {
 
     /**
      * Kiem tra xem 2 user co phai la ban be khong
-     *
      * @param userId
      * @param friendId
      * @return

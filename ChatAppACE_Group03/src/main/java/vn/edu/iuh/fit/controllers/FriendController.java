@@ -36,16 +36,34 @@ public class FriendController {
     @Autowired
     private FriendRequestService friendRequestService;
 
-    @GetMapping("/friend-requests")
+    @GetMapping("/friend-requests/received")
     public ResponseEntity<ApiResponse<?>> getFriendsRequest(@RequestHeader("Authorization") String token) {
         try {
             System.out.println("Token: " + token);
             List<FriendRequestResponse>  friendRequests = friendRequestService.getFriendRequests(token);
             if(friendRequests.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.OK)
-                        .body(ApiResponse.builder().status("SUCCESS").message("Friend Request list is empty").build());
+                        .body(ApiResponse.builder().status("SUCCESS").message("Get list Friend Request  is empty").build());
             }
-            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Friend Request list successfully").response(friendRequests).build());
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Get list Friend Request  successfully").response(friendRequests).build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
+        }
+    }
+
+    @GetMapping("/friend-requests/sent")
+    public ResponseEntity<ApiResponse<?>> getSentFriendsRequest(@RequestHeader("Authorization") String token) {
+        try {
+            System.out.println("Token: " + token);
+            List<FriendRequestResponse>  friendRequests = friendRequestService.getSentFriendRequests(token);
+
+            if(friendRequests.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(ApiResponse.builder().status("SUCCESS").message("Get list Friend Request Sent is empty").build());
+            }
+
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Get list Friend Request Sent successfully").response(friendRequests).build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
@@ -93,6 +111,24 @@ public class FriendController {
                         .body(ApiResponse.builder().status("FAILED").message("Failed to reject friend request").build());
             }
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Reject Friend Request Successfully").response("").build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
+        }
+    }
+
+    @PostMapping("/recall-request/{requestId}")
+    public ResponseEntity<ApiResponse<?>> recallFriendRequest(@RequestHeader("Authorization") String token,
+                                                              @PathVariable("requestId") ObjectId requestId) {
+        try {
+            System.out.println("Token: " + token);
+            System.out.println("Request ID: " + requestId);
+            boolean isAccepted = friendRequestService.recallFriendRequestSent(token, requestId);
+            if(!isAccepted) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.builder().status("FAILED").message("Failed to recall friend request").build());
+            }
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Recall Friend Request Successfully").response("").build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
