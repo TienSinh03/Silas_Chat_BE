@@ -1,5 +1,5 @@
 /*
- * @ {#} FriendRequest.java   1.0     18/03/2025
+ * @ {#} FriendRequestReq.java   1.0     18/03/2025
  *
  * Copyright (c) 2025 IUH. All rights reserved.
  */

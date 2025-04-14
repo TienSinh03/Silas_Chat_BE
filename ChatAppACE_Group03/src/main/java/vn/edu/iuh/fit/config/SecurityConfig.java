@@ -110,6 +110,7 @@ public class SecurityConfig {
                         .requestMatchers( PUBLIC_ENDPOINTS).permitAll()  // Cho phép truy cập không cần xác thực
                         .requestMatchers("/api/v1/dashboard/**").authenticated()
                         .requestMatchers("/api/v1/user/**").authenticated()
+                        .requestMatchers("/api/v1/friend/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)

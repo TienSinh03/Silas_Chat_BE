@@ -20,4 +20,6 @@ import vn.edu.iuh.fit.entities.FriendRequest;
  */
 @Repository
 public interface FriendRequestRepository extends MongoRepository<FriendRequest, ObjectId> {
+    boolean existsBySenderAndReceiver(ObjectId sender, ObjectId receiver);
+
 }

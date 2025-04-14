@@ -23,4 +23,5 @@ import java.util.Optional;
 public interface UserRepository extends MongoRepository<User, ObjectId> { ;
     Optional<User> findByPhone(String phone);
     boolean existsByPhone(String phone);
+    Optional<User> findById(ObjectId id);
 }
