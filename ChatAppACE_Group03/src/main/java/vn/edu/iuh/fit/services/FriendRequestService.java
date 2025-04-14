@@ -25,4 +25,7 @@ public interface FriendRequestService {
     public boolean rejectFriendRequest(String token, ObjectId requestId);
 
     List<FriendRequestResponse> getFriendRequests(String token);
+    public List<FriendRequestResponse> getSentFriendRequests(String token);
+
+    public boolean  recallFriendRequestSent(String token, ObjectId requestId);
 }
