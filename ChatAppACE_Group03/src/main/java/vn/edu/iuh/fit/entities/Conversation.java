@@ -15,7 +15,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 import vn.edu.iuh.fit.utils.ObjectIdSerializer;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,8 +30,8 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "conservation")
-public class Conservation {
+@Document(collection = "conversations")
+public class Conversation {
     @Id
     @JsonSerialize(using = ObjectIdSerializer.class)
     private ObjectId id;
@@ -40,6 +39,7 @@ public class Conservation {
     private String avatar;
     @Field("is_group")
     private boolean isGroup;
+
     private ObjectId lastMessageId; // Lưu messageId cuối cùng
     private Instant createdAt;
 

@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.entities.File;
 import vn.edu.iuh.fit.entities.Member;
 
+import java.util.List;
+
 /*
  * @description:
  * @author: Tran Hien Vinh
@@ -20,4 +22,5 @@ import vn.edu.iuh.fit.entities.Member;
  */
 @Repository
 public interface MemberRepository extends MongoRepository<Member, ObjectId> {
+    List<Member> findByUserId(ObjectId userId);
 }
