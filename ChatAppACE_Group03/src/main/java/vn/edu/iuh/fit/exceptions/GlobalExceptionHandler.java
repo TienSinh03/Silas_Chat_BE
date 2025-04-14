@@ -172,10 +172,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                         .build());
     }
 
+
     @ExceptionHandler(FriendRequestException.class)
     public ResponseEntity<ApiResponse<?>> handleFriendRequestException(FriendRequestException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(
+                        ApiResponse.builder()
+                                .status("FAILED")
+                                .message(ex.getMessage())
+                                .build()
+                );
+    }
+
+    @ExceptionHandler(ConversationCreationException.class)
+    public ResponseEntity<ApiResponse<?>> handleConversationCreationException(ConversationCreationException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
                 .body(
                         ApiResponse.builder()
                                 .status("FAILED")

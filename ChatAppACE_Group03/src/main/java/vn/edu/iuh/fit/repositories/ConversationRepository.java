@@ -9,7 +9,9 @@ package vn.edu.iuh.fit.repositories;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
-import vn.edu.iuh.fit.entities.Conservation;
+import vn.edu.iuh.fit.entities.Conversation;
+
+import java.util.Optional;
 
 /*
  * @description:
@@ -18,5 +20,5 @@ import vn.edu.iuh.fit.entities.Conservation;
  * @version:    1.0
  */
 @Repository
-public interface ConservationRepository extends MongoRepository<Conservation, ObjectId> {
+public interface ConversationRepository extends MongoRepository<Conversation, ObjectId> {
 }
