@@ -11,6 +11,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.dtos.request.FriendRequestReq;
+import vn.edu.iuh.fit.dtos.response.FriendRequestDto;
 import vn.edu.iuh.fit.dtos.response.FriendRequestResponse;
 import vn.edu.iuh.fit.dtos.response.FriendResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
@@ -57,12 +58,12 @@ public class FriendRequestServiceImpl implements FriendRequestService
     private FriendRepository friendRepository;
 
     //entity to dto
-    private FriendRequestResponse convertToDto(FriendRequest friendRequest) {
-        return modelMapper.map(friendRequest, FriendRequestResponse.class);
+    private FriendRequestDto convertToDto(FriendRequest friendRequest) {
+        return modelMapper.map(friendRequest, FriendRequestDto.class);
     }
 
     //dto to entity
-    private FriendRequest convertToEntity(FriendRequestResponse friendRequestReq) {
+    private FriendRequest convertToEntity(FriendRequestDto friendRequestReq) {
         return modelMapper.map(friendRequestReq, FriendRequest.class);
     }
 
@@ -72,10 +73,13 @@ public class FriendRequestServiceImpl implements FriendRequestService
      * @return
      */
     @Override
-    public FriendRequestResponse sendFriendRequest(FriendRequestReq friendRequestReq) {
+    public FriendRequestDto sendFriendRequest(String token,FriendRequestReq friendRequestReq) {
+
+        // lay thong tin ng gui
+        UserResponse user = userService.getCurrentUser(token);
 
         // Validate the request
-        ObjectId senderId = friendRequestReq.getSenderId();
+        ObjectId senderId = user.getId();
         ObjectId receiverId = friendRequestReq.getReceiverId();
 
         User sender = userRepository.findById(senderId)
@@ -167,9 +171,18 @@ public class FriendRequestServiceImpl implements FriendRequestService
 
 
 
-
-
-        return null;
+        // Lấy danh sách người dùng từ danh sách friendRequests
+        return friendRequests.stream()
+                .map(friendReq -> {
+                    User userSender = userRepository.findById(friendReq.getSender())
+                            .orElseThrow(() -> new UserNotFoundException("Người gửi không tồn tại."));
+                    FriendRequestResponse friendRequestResponse = new FriendRequestResponse();
+                    friendRequestResponse.setRequestId(friendReq.getId());
+                    friendRequestResponse.setUserId(userSender.getId());
+                    friendRequestResponse.setAvatar(userSender.getAvatar());
+                    friendRequestResponse.setDisplayName(userSender.getDisplayName());
+                    return friendRequestResponse;
+                }).toList();
     }
 
 
