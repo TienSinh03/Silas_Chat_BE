@@ -30,6 +30,8 @@ import vn.edu.iuh.fit.services.UserService;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 /*
  * @description:
@@ -128,4 +130,47 @@ public class FriendRequestServiceImpl implements FriendRequestService
         // Lưu vào cơ sở dữ liệu
         return true;
     }
+
+    @Override
+    public boolean rejectFriendRequest(String token, ObjectId requestId) {
+        UserResponse user = userService.getCurrentUser(token);
+
+        System.out.println("User: " + user.getId());
+        FriendRequest friendRequest = friendRequestRepository.findById(requestId)
+                .orElseThrow(() -> new FriendRequestException("Lời mời không tồn tại."));
+
+        // Kiểm tra trạng thái của lời mời
+        if(friendRequest.getStatus() != RequestFriendStatus.PENDING) {
+            throw new FriendRequestException("Lời mời đã được chấp nhận hoặc từ chối trước đó.");
+        }
+
+        if(!friendRequest.getReceiver().equals(user.getId())) {
+            throw new FriendRequestException("Bạn không có lời mời này.");
+        }
+        // xoa yc vào cơ sở dữ liệu
+        friendRequestRepository.delete(friendRequest);
+
+        return true;
+    }
+
+    @Override
+    public List<FriendRequestResponse> getFriendRequests(String token) {
+        UserResponse user = userService.getCurrentUser(token);
+        if(user == null) {
+            throw new FriendRequestException("Người dùng không tồn tại.");
+        }
+
+        List<FriendRequest> friendRequests = friendRequestRepository.findByReceiverAndStatus(user.getId(), RequestFriendStatus.PENDING);
+        if(friendRequests.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+
+
+
+
+        return null;
+    }
+
+
 }

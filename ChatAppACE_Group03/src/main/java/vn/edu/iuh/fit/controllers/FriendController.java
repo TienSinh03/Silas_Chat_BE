@@ -61,4 +61,22 @@ public class FriendController {
                     .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
         }
     }
+
+    @PostMapping("/reject-request/{requestId}")
+    public ResponseEntity<ApiResponse<?>> rejectFriendRequest(@RequestHeader("Authorization") String token,
+                                                              @PathVariable("requestId") ObjectId requestId) {
+        try {
+            System.out.println("Token: " + token);
+            System.out.println("Request ID: " + requestId);
+            boolean isAccepted = friendRequestService.rejectFriendRequest(token, requestId);
+            if(!isAccepted) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.builder().status("FAILED").message("Failed to reject friend request").build());
+            }
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Reject Friend Request Successfully").response("").build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
+        }
+    }
 }

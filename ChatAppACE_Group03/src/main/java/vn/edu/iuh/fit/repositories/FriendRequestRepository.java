@@ -11,6 +11,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.entities.Friend;
 import vn.edu.iuh.fit.entities.FriendRequest;
+import vn.edu.iuh.fit.enums.RequestFriendStatus;
+
+import java.util.List;
 
 /*
  * @description:
@@ -21,5 +24,7 @@ import vn.edu.iuh.fit.entities.FriendRequest;
 @Repository
 public interface FriendRequestRepository extends MongoRepository<FriendRequest, ObjectId> {
     boolean existsBySenderAndReceiver(ObjectId sender, ObjectId receiver);
+
+    List<FriendRequest> findByReceiverAndStatus(ObjectId receiver, RequestFriendStatus status);
 
 }
