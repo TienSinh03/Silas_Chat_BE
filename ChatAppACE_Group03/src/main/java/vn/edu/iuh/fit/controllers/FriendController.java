@@ -42,8 +42,8 @@ public class FriendController {
             System.out.println("Token: " + token);
             List<FriendRequestResponse>  friendRequests = friendRequestService.getFriendRequests(token);
             if(friendRequests.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.builder().status("FAILED").message("Friend Request list is empty").build());
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(ApiResponse.builder().status("SUCCESS").message("Friend Request list is empty").build());
             }
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Friend Request list successfully").response(friendRequests).build());
         } catch (Exception e) {
