@@ -1,0 +1,106 @@
+/**
+ * @ (#) FriendServiceImpl.java      4/14/2025
+ * <p>
+ * Copyright (c) 2025 IUH. All rights reserved
+ */
+
+package vn.edu.iuh.fit.services.impl;
+
+import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import vn.edu.iuh.fit.dtos.response.FriendResponse;
+import vn.edu.iuh.fit.entities.Friend;
+import vn.edu.iuh.fit.entities.User;
+import vn.edu.iuh.fit.exceptions.UserNotFoundException;
+import vn.edu.iuh.fit.repositories.FileRepository;
+import vn.edu.iuh.fit.repositories.FriendRepository;
+import vn.edu.iuh.fit.repositories.UserRepository;
+import vn.edu.iuh.fit.services.FriendService;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/*
+ * @description:
+ * @author: Sinh Phan Tien
+ * @date: 4/14/2025
+ */
+@Service
+public class FriendServiceImpl implements FriendService {
+    @Autowired
+    private FriendRepository friendRepository;
+    @Autowired
+    private FileRepository fileRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    /**
+     * Lấy danh sách bạn bè của người dùng
+     * Kiem tra friend dong thoi ca 2 chieu
+     * findByUserId: Lay danh sach user tu user_id
+     * findByFriendId: Lay danh sach ban be tu friend
+     * @param userId
+     * @return
+     */
+    @Override
+    public List<FriendResponse> getFriends(ObjectId userId) {
+
+        if (userId == null) {
+            throw new IllegalArgumentException("userId cannot be null");
+        }
+
+        // Lấy danh sách bạn bè từ user_id
+        //Vi du: user_id = 1, friend_id = 2
+        List<Friend> fromUserId = friendRepository.findByUserId(userId);
+        System.out.println("fromUserId: " + fromUserId);
+
+        // Lấy danh sách bạn bè từ friend_id
+        List<Friend> fromFriendId = friendRepository.findByFriendId(userId);
+
+        System.out.println("fromFriendId: " + fromFriendId);
+
+        // Luu danh sach id cua ban be
+        Set<ObjectId> friendIds = new HashSet<>();
+
+        if(!fromUserId.isEmpty()) {
+            friendIds.addAll(fromUserId.stream().map(Friend::getFriendId).filter(Objects::nonNull).toList());
+        }
+
+        if (!fromFriendId.isEmpty()) {
+            friendIds.addAll(fromFriendId.stream().map(Friend::getUserId).filter(Objects::nonNull).toList());
+        }
+
+        System.out.println("friendIds: " + friendIds);
+        List<User> friends = userRepository.findAllById(friendIds);
+        System.out.println("friends: " + friends);
+
+        if (friends.size() != friendIds.size()) {
+            throw new UserNotFoundException("One or more users not found");
+        }
+
+        return friends.stream()
+                .map(friend -> {
+                    FriendResponse friendResponse = new FriendResponse();
+                    friendResponse.setUserId(friend.getId());
+                    friendResponse.setDisplayName(friend.getDisplayName());
+                    friendResponse.setAvatar(friend.getAvatar());
+                    return friendResponse;
+                })
+                .collect(Collectors.toList());
+
+    }
+
+    /**
+     * Kiem tra xem 2 user co phai la ban be khong
+     *
+     * @param userId
+     * @param friendId
+     * @return
+     */
+    public boolean isFriend(ObjectId userId, ObjectId friendId) {
+        return friendRepository.findByUserIdAndFriendId(userId, friendId).isPresent() ||
+                friendRepository.findByUserIdAndFriendId(friendId, userId).isPresent();
+    }
+}

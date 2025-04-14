@@ -11,6 +11,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.entities.Friend;
 
+import java.util.List;
+import java.util.Optional;
+
 /*
  * @description:
  * @author: Tran Hien Vinh
@@ -19,4 +22,9 @@ import vn.edu.iuh.fit.entities.Friend;
  */
 @Repository
 public interface FriendRepository extends MongoRepository<Friend, ObjectId> {
+    List<Friend> findByUserId(ObjectId userId);
+    List<Friend> findByFriendId(ObjectId userId);
+
+    // Kiểm tra mối quan hệ bạn bè giữa userId1 và userId2
+    Optional<Friend> findByUserIdAndFriendId(ObjectId userId, ObjectId friendId);
 }
