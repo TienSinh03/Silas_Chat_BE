@@ -18,5 +18,5 @@ import vn.edu.iuh.fit.entities.Conversation;
  * @version:    1.0
  */
 @Repository
-public interface ConservationRepository extends MongoRepository<Conversation, ObjectId> {
+public interface ConversationRepository extends MongoRepository<Conversation, ObjectId> {
 }

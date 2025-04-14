@@ -13,7 +13,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,8 +28,8 @@ import java.util.Set;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "conservation")
-public class Conservation {
+@Document(collection = "conversations")
+public class Conversation {
     @Id
     private ObjectId id;
     private String name;
