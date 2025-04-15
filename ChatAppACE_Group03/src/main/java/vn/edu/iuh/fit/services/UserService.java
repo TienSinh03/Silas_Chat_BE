@@ -11,6 +11,8 @@ import vn.edu.iuh.fit.dtos.request.UpdateUserRequest;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.User;
 
+import java.util.List;
+
 /*
  * @description:
  * @author: Tran Hien Vinh
@@ -28,4 +30,6 @@ public interface UserService {
 
     UserResponse updateUser(ObjectId userId, UpdateUserRequest request);
     UserResponse changePassword(ObjectId userId, String oldPassword, String newPassword);
+
+    public List<UserResponse> searchByKeyWord(String keyWord);
 }
