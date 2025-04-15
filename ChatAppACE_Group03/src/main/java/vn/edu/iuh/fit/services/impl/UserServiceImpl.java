@@ -22,6 +22,10 @@ import vn.edu.iuh.fit.repositories.UserRepository;
 import vn.edu.iuh.fit.services.UserService;
 import vn.edu.iuh.fit.utils.JwtTokenUtil;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /*
  * @description:
  * @author: Tran Hien Vinh
@@ -137,6 +141,24 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return convertToDto(user);
+    }
+
+    @Override
+    public List<UserResponse> searchByKeyWord(String keyWord) {
+        if(keyWord.startsWith("0")) {
+            keyWord = "84" + keyWord.substring(1);
+        }
+        System.out.println("KeyWord: " + keyWord);
+
+        List<User> search = userRepository.findByKeyWord(keyWord);
+
+        if(search.isEmpty()) {
+         return  Collections.emptyList();
+        }
+
+        return search.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
 

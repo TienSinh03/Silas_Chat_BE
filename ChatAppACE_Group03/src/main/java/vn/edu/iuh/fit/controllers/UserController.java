@@ -183,4 +183,22 @@ public class UserController {
                             .build());
         }
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<?>> search(@RequestParam("keyword") String keyword) {
+        try {
+            System.out.println("KeyWord: " + keyword);
+            List<UserResponse> userResponses = userService.searchByKeyWord(keyword);
+            if(userResponses.isEmpty()) {
+                return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Not Found User").response("").build());
+            }
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Search user success").response(userResponses).build());
+        } catch (Exception e) {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .status("FAILED")
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
 }
