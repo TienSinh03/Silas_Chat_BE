@@ -106,6 +106,7 @@ public class FriendServiceImpl implements FriendService {
      * @param friendId
      * @return
      */
+    @Override
     public boolean isFriend(ObjectId userId, ObjectId friendId) {
         return friendRepository.findByUserIdAndFriendId(userId, friendId).isPresent() ||
                 friendRepository.findByUserIdAndFriendId(friendId, userId).isPresent();

@@ -12,12 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.dtos.request.FriendRequestReq;
-import vn.edu.iuh.fit.dtos.response.ApiResponse;
-import vn.edu.iuh.fit.dtos.response.FriendRequestDto;
-import vn.edu.iuh.fit.dtos.response.FriendRequestResponse;
-import vn.edu.iuh.fit.dtos.response.FriendResponse;
+import vn.edu.iuh.fit.dtos.response.*;
 import vn.edu.iuh.fit.services.FriendRequestService;
 import vn.edu.iuh.fit.services.FriendService;
+import vn.edu.iuh.fit.services.UserService;
 
 import java.util.List;
 
@@ -35,6 +33,8 @@ public class FriendController {
 
     @Autowired
     private FriendRequestService friendRequestService;
+    @Autowired
+    private UserService userService;
 
     @GetMapping("/friend-requests/received")
     public ResponseEntity<ApiResponse<?>> getFriendsRequest(@RequestHeader("Authorization") String token) {
@@ -147,6 +147,24 @@ public class FriendController {
                         .body(ApiResponse.builder().status("FAILED").message("Failed to unfriend").build());
             }
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Unfriend Successfully").response("").build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
+        }
+    }
+
+    @GetMapping("/check-friend")
+    public ResponseEntity<ApiResponse<?>> checkFriend(@RequestHeader("Authorization") String token,
+                                                   @RequestParam ObjectId friendId) {
+        try {
+            System.out.println("Token: " + token);
+            System.out.println("Friend ID: " + friendId);
+            UserResponse user = userService.getCurrentUser(token);
+            if(user == null) {
+                return ResponseEntity.noContent().build();
+            }
+            boolean isFriend = friendService.isFriend(user.getId(), friendId);
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Check friend Successfully").response(isFriend).build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());

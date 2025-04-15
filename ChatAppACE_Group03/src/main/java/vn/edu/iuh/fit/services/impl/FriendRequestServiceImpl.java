@@ -58,6 +58,9 @@ public class FriendRequestServiceImpl implements FriendRequestService
     @Autowired
     private FriendRepository friendRepository;
 
+    @Autowired
+    private FriendService  friendService;
+
     //entity to dto
     private FriendRequestDto convertToDto(FriendRequest friendRequest) {
         return modelMapper.map(friendRequest, FriendRequestDto.class);
@@ -133,6 +136,10 @@ public class FriendRequestServiceImpl implements FriendRequestService
         // Kiểm tra xem người dùng có phải là người nhận không
         if(!friendRequest.getReceiver().equals(user.getId())) {
             throw new FriendRequestException("Bạn không có lời mời này.");
+        }
+
+        if(friendService.isFriend(friendRequest.getReceiver(), friendRequest.getSender())) {
+            throw new FriendRequestException("Đã là bạn bè.");
         }
 
         friendRequest.setStatus(RequestFriendStatus.ACCEPTED);

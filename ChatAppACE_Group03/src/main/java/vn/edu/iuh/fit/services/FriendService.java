@@ -19,4 +19,5 @@ import java.util.List;
 public interface FriendService {
     List<FriendResponse> getFriends(ObjectId userId);
     public boolean unfriend(String token,ObjectId friendId);
+    public boolean isFriend(ObjectId userId, ObjectId friendId);
 }
