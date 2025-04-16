@@ -20,6 +20,7 @@ public class MessageController {
     @PostMapping
     public ResponseEntity<ApiResponse<?>> sendMessage(@RequestBody ChatMessageRequest request) {
         try {
+            System.out.println("Request: " + request);
             Message message = messageService.sendMessage(request);
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
