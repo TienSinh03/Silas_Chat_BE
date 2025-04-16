@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.iuh.fit.dtos.ConversationDTO;
@@ -18,6 +20,7 @@ import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.Conversation;
 import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
+import vn.edu.iuh.fit.entities.User;
 import vn.edu.iuh.fit.enums.MemberRoles;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
 import vn.edu.iuh.fit.repositories.ConversationRepository;
@@ -104,8 +107,19 @@ public class ConversationServiceImpl implements ConversationService {
 
     @Override
     public ConversationDTO createConversationOneToOne(ConversationDTO conversationDTO) {
+        // Lấy userId từ token
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String phone = authentication.getName();
+        System.out.println("currentUserId: " + phone);
+        User currentUser = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy người dùng với phone: " + phone));
+        System.out.println("currentUser: " + currentUser);
+
         Set<ObjectId> memberIds = Optional.ofNullable(conversationDTO.getMemberId())
                 .orElseThrow(() -> new ConversationCreationException("memberId không được null"));
+
+        // Thêm userId hiện tại vào danh sách memberIds
+        memberIds.add(currentUser.getId());
 
         // Validate phải đúng 2 user và không trùng lặp
         if (memberIds.size() != 2) {
@@ -115,6 +129,20 @@ public class ConversationServiceImpl implements ConversationService {
         if (memberIds.size() != new HashSet<>(memberIds).size()) {
             throw new ConversationCreationException("Danh sách memberId chứa giá trị trùng lặp.");
         }
+
+        // Xác định memberId của người còn lại
+        ObjectId otherMemberId = memberIds.stream()
+                .filter(id -> !id.equals(currentUser.getId()))
+                .findFirst()
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy memberId của người còn lại."));
+
+        System.out.println("otherMemberId: " + otherMemberId);
+
+        // Lấy thông tin user còn lại từ userRepository
+        User otherUser = userRepository.findById(otherMemberId)
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy user với ID: " + otherMemberId));
+
+        System.out.println("otherUser: " + otherUser);
 
         // Kiểm tra xem đã có cuộc trò chuyện một-một giữa 2 người này chưa
         List<Conversation> existingConversations = conversationRepository.findOneToOneConversationByMemberIds(memberIds, false);
@@ -128,6 +156,8 @@ public class ConversationServiceImpl implements ConversationService {
                 // Đã tồn tại cuộc trò chuyện một-một
                 ConversationDTO existingDTO = mapToDTO(existing);
                 existingDTO.setMemberId(existingMemberIds);
+                existingDTO.setName(otherUser.getDisplayName());
+                existingDTO.setAvatar(otherUser.getAvatar());
                 return existingDTO;
             }
         }
@@ -136,8 +166,11 @@ public class ConversationServiceImpl implements ConversationService {
         Conversation conversation = mapToEntity(conversationDTO);
         conversation.setGroup(false);
         conversation.setCreatedAt(Instant.now());
+        conversation.setName(otherUser.getDisplayName());
+        conversation.setAvatar(otherUser.getAvatar());
         Conversation savedConversation = conversationRepository.save(conversation);
 
+        // Tạo danh sách Member
         Set<Member> members = memberIds.stream()
                 .map(memberId -> Member.builder()
                         .userId(memberId)
@@ -151,6 +184,8 @@ public class ConversationServiceImpl implements ConversationService {
 
         ConversationDTO result = mapToDTO(savedConversation);
         result.setMemberId(memberIds);
+        result.setName(otherUser.getDisplayName());
+        result.setAvatar(otherUser.getAvatar());
 
         // Nếu DTO đầu vào có messageIds -> gán lại và tính lastMessageId
         if (conversationDTO.getMessageIds() != null && !conversationDTO.getMessageIds().isEmpty()) {
