@@ -12,6 +12,7 @@ import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.User;
 
 import java.util.List;
+import java.util.Set;
 
 /*
  * @description:
@@ -32,4 +33,5 @@ public interface UserService {
     UserResponse changePassword(ObjectId userId, String oldPassword, String newPassword);
 
     public List<UserResponse> searchByKeyWord(String keyWord);
+    List<UserResponse> getUsersByIds(Set<ObjectId> userIds);
 }

@@ -11,7 +11,7 @@ import vn.edu.iuh.fit.services.MessageService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/messages")
+@RequestMapping("/api/v1/messages")
 @RequiredArgsConstructor
 public class MessageController {
 

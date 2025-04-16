@@ -23,4 +23,5 @@ import java.util.List;
 @Repository
 public interface MemberRepository extends MongoRepository<Member, ObjectId> {
     List<Member> findByUserId(ObjectId userId);
+    List<Member> findByConversationId(ObjectId conversationId);
 }
