@@ -8,8 +8,10 @@ package vn.edu.iuh.fit.services;
 
 import org.bson.types.ObjectId;
 import vn.edu.iuh.fit.dtos.ConversationDTO;
+import vn.edu.iuh.fit.entities.Message;
 
 import java.util.List;
+import java.util.Set;
 
 /*
  * @description:
@@ -26,4 +28,6 @@ public interface ConversationService {
     ConversationDTO findConversationById(ObjectId conversationId);
     // Hàm tìm kiếm tất cả cuộc trò chuyện của người dùng theo id
     List<ConversationDTO> findAllConversationsByUserId(ObjectId userId);
+    // Hàm tìm kiếm Id cuộc trò chuyện cuối cùng trong danh sách Id cuộc trò chuyện
+    ObjectId getLastMessageId(Set<ObjectId> messageIds);
 }

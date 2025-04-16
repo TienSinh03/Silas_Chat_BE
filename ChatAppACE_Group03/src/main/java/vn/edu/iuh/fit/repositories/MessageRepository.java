@@ -8,11 +8,13 @@ package vn.edu.iuh.fit.repositories;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.entities.File;
 import vn.edu.iuh.fit.entities.Message;
 
 import java.util.List;
+import java.util.Set;
 
 /*
  * @description:
@@ -24,4 +26,7 @@ import java.util.List;
 public interface MessageRepository extends MongoRepository<Message, ObjectId> {
     List<Message> findByConversationIdOrderByTimestampAsc(ObjectId conversationId);
     List<String> findDistinctSenderIdsByConversationId(String conversationId);
+
+    @Query("{ '_id': { $in: ?0 } }")
+    List<Message> findByIdIn(Set<ObjectId> ids);
 }

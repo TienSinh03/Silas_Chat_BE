@@ -24,6 +24,7 @@ import vn.edu.iuh.fit.utils.JwtTokenUtil;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /*
@@ -157,6 +158,13 @@ public class UserServiceImpl implements UserService {
         }
 
         return search.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserResponse> getUsersByIds(Set<ObjectId> userIds) {
+        return userRepository.findAllById(userIds).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }

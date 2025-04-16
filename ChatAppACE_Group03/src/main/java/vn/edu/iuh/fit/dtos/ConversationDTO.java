@@ -14,14 +14,19 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Field;
+import vn.edu.iuh.fit.dtos.response.UserResponse;
+import vn.edu.iuh.fit.entities.User;
 import vn.edu.iuh.fit.utils.ObjectIdDeserializer;
 import vn.edu.iuh.fit.utils.ObjectIdSerializer;
 import vn.edu.iuh.fit.utils.ObjectIdSetDeserializer;
 import vn.edu.iuh.fit.utils.ObjectIdSetSerializer;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /*
@@ -55,7 +60,17 @@ public class ConversationDTO {
     @JsonDeserialize(using = ObjectIdSetDeserializer.class)
     private Set<ObjectId> memberId= new HashSet<>();
 
+    @Transient
+    @JsonProperty("members")
+    private List<UserResponse> members = new ArrayList<>();
 
+    @JsonSerialize(using = ObjectIdSetSerializer.class)
+    @JsonDeserialize(using = ObjectIdSetDeserializer.class)
     @JsonProperty("message_ids")
     private Set<ObjectId> messageIds = new HashSet<>();
+
+    @Transient
+    @JsonProperty("last_message")
+    private MessageDTO lastMessage;
+
 }
