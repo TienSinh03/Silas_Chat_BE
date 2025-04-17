@@ -29,6 +29,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     public String uploadImage(MultipartFile file) {
         try {
             Map<?,?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+//            System.out.println("Cloudinary result: " + result);
             return result.get("secure_url").toString();
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload image", e);
