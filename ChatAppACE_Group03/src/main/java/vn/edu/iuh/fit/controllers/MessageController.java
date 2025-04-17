@@ -1,5 +1,13 @@
 package vn.edu.iuh.fit.controllers;
 
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+
 import com.cloudinary.Api;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
@@ -8,9 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import vn.edu.iuh.fit.dtos.MessageDTO;
 import vn.edu.iuh.fit.dtos.request.ChatMessageRequest;
+import vn.edu.iuh.fit.dtos.request.UpdateUserRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.entities.Message;
+import vn.edu.iuh.fit.services.CloudinaryService;
 import vn.edu.iuh.fit.services.MessageService;
 
 import java.util.List;
@@ -21,6 +33,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MessageController {
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+
+    @Autowired
     private final MessageService messageService;
 
     @Autowired
@@ -127,4 +144,60 @@ public class MessageController {
                     .build());
         }
     }
+    
+@PostMapping(value = "/upload-img", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<ApiResponse<?>> uploadImage(
+        @RequestPart("request") String reqJson,
+        @RequestPart(value = "anh", required = false) MultipartFile anh) {
+    System.out.println("Request upload img: " + reqJson);
+    ObjectMapper objectMapper = new ObjectMapper();
+    ChatMessageRequest chatMessageRequest = null;
+
+    try {
+        chatMessageRequest = objectMapper.readValue(reqJson, ChatMessageRequest.class);
+
+        if (anh != null && !anh.isEmpty()) {
+            System.out.println("Anh" + anh.getOriginalFilename());
+
+            String imgUrl = cloudinaryService.uploadImage(anh);
+            System.out.println("url" + imgUrl);
+
+            chatMessageRequest.setFileUrl(imgUrl);
+            System.out.println("File name: " + anh.getOriginalFilename());
+            System.out.println("File size: " + anh.getSize());
+        } else {
+
+        }
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("Invalid 1111111 format")
+                        .build());
+    }
+
+    if (chatMessageRequest.getSenderId() == null || chatMessageRequest.getConversationId() == null) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("LOI")
+                        .build());
+    }
+
+    try {
+        Message message = messageService.sendMessage(chatMessageRequest);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .status("SUCCESS")
+                .message("Upload image successfully")
+
+                .response(message)
+                .build());
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(ApiResponse.builder()
+                .status("FAILED")
+                .message(e.getMessage())
+                .build());
+    }
+}
+
 }
