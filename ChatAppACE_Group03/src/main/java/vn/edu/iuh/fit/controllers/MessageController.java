@@ -98,4 +98,33 @@ public class MessageController {
                     .build());
         }
     }
+
+    @PostMapping("/delete-for-user")
+    public ResponseEntity<ApiResponse<?>> deleteMessageForUser(@RequestBody Map<String, String> request) {
+        try {
+            ObjectId messageId = new ObjectId(request.get("messageId"));
+            ObjectId userId = new ObjectId(request.get("userId"));
+
+            Message updatedMessage = messageService.deleteMessageForUser(messageId, userId);
+
+            if (updatedMessage == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("Message not found")
+                        .build());
+            }
+
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Message deleted for user")
+                    .response(updatedMessage)
+                    .build());
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("FAILED")
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
 }
