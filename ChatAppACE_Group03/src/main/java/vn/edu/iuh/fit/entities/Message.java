@@ -54,6 +54,8 @@ public class Message {
     private Instant timestamp;                  // Thời gian gửi
     private boolean isSeen;
 
+    private boolean recalled;
+
     private ObjectId replyToMessageId;          // Phản hồi tin nhắn nào (nếu có)
 
     private Map<String, List<ObjectId>> reactions; // Reaction voi tin nhan
