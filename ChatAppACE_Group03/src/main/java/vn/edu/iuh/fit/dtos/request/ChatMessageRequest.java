@@ -1,8 +1,13 @@
 package vn.edu.iuh.fit.dtos.request;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
+@NoArgsConstructor @AllArgsConstructor
+@SuperBuilder
 public class ChatMessageRequest {
     private String senderId;
     private String receiverId;
@@ -11,14 +16,8 @@ public class ChatMessageRequest {
     private String messageType;
     private String fileUrl;
     private String replyToMessageId;
+    private boolean isSeen;
+    private boolean recalled;
 
-    public ChatMessageRequest(String senderId, String conversationId, String content, String messageType, String s, String replyToMessageId) {
-        this.senderId = senderId;
-        this.conversationId = conversationId;
-        this.content = content;
-        this.messageType = messageType;
-        this.fileUrl = s;
-        this.replyToMessageId = replyToMessageId;
-    }
 }
 
