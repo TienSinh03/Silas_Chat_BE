@@ -51,6 +51,8 @@ public class MessageDTO {
     private Instant timestamp;
     private boolean isSeen;
 
+    private boolean recalled = false;
+
     @JsonSerialize(using = ObjectIdSerializer.class)
     @JsonDeserialize(using = ObjectIdDeserializer.class)
     private ObjectId replyToMessageId;
