@@ -217,7 +217,7 @@ public ResponseEntity<ApiResponse<?>> uploadImage(
         }
 
         try {
-            Message message = messageService.sendMessage(chatMessageRequest);
+            MessageDTO message = messageService.sendMessage(chatMessageRequest);
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
                     .message("Upload image successfully")
@@ -285,7 +285,7 @@ public ResponseEntity<ApiResponse<?>> uploadImage(
             forwardRequest.setContent(content);
             forwardRequest.setMessageType("TEXT"); // Có thể mở rộng cho hình ảnh/file
 
-            Message forwardedMessage = messageService.sendMessage(forwardRequest);
+            MessageDTO forwardedMessage = messageService.sendMessage(forwardRequest);
 
             // Gửi qua WebSocket
             messagingTemplate.convertAndSend("/chat/message/single/" + forwardedMessage.getConversationId(), forwardedMessage);
