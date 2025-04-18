@@ -232,7 +232,30 @@ public ResponseEntity<ApiResponse<?>> uploadImage(
         }
     }
 
-
+    @PostMapping("/check-members")
+    public ResponseEntity<ApiResponse<?>> checkMembers(@RequestBody Map<String, String> request) {
+        try {
+            ObjectId senderId = new ObjectId(request.get("senderId"));
+            ObjectId receiverId = new ObjectId(request.get("receiverId"));
+            ConversationDTO conversation = conversationService.findConversationByMembers(senderId, receiverId);
+            if (conversation == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("Conversation not found")
+                        .build());
+            }
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Check members successfully")
+                    .response(conversation)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("FAILED")
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
 
     @PostMapping("/forward")
     public ResponseEntity<ApiResponse<?>> forwardMessage(@RequestBody Map<String, String> request) {
@@ -243,13 +266,13 @@ public ResponseEntity<ApiResponse<?>> uploadImage(
             String content = request.get("content"); // Nội dung tin nhắn gốc
 
             // Tìm tin nhắn gốc
-            Message originalMessage = messageService.getMessageById(messageId);
-            if (originalMessage == null || !originalMessage.getSenderId().equals(senderId)) {
-                return ResponseEntity.badRequest().body(ApiResponse.builder()
-                        .status("FAILED")
-                        .message("Message not found or unauthorized")
-                        .build());
-            }
+//            Message originalMessage = messageService.getMessageById(messageId);
+//            if (originalMessage == null || !originalMessage.getSenderId().equals(senderId)) {
+//                return ResponseEntity.badRequest().body(ApiResponse.builder()
+//                        .status("FAILED")
+//                        .message("Message not found or unauthorized")
+//                        .build());
+//            }
 
             // Tìm hoặc tạo cuộc trò chuyện đích
             ConversationDTO conversation = conversationService.findOrCreateConversation(senderId, receiverId);
