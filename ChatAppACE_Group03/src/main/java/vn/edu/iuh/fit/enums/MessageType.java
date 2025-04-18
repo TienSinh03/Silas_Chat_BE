@@ -16,7 +16,10 @@ public enum MessageType {
     IMAGE("IMAGE"),
     VIDEO("VIDEO"),
     AUDIO("AUDIO"),
-    FILE("FILE");
+    FILE("FILE"),
+    STICKER("STICKER"),
+    GIF("GIF"),
+    EMOJI("EMOJI"),;
 
     private String type;
 
