@@ -43,10 +43,10 @@ public class MessageDTO {
     @JsonDeserialize(using = ObjectIdDeserializer.class)
     private ObjectId conversationId;
 
-    private String content;
+    private String content; // dùng cho text hoặc emoji
     private MessageType messageType;
 
-    private String fileUrl;
+    private String fileUrl; // dùng cho sticker hoặc gif
 
     private Instant timestamp;
     private boolean isSeen;
