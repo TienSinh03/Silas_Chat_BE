@@ -10,6 +10,8 @@ import vn.edu.iuh.fit.repositories.MessageRepository;
 import vn.edu.iuh.fit.services.MessageService;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -96,8 +98,25 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public Message getMessageById(ObjectId messageId) {
-        return messageRepository.findById(messageId).orElse(null);
+    public Message deleteMessageForUser(ObjectId messageId, ObjectId userId) {
+        // Tìm tin nhắn
+        Message message = messageRepository.findById(messageId).orElse(null);
+        if (message == null) {
+            return null;
+        }
+
+        // Thêm userId vào danh sách người dùng đã xóa tin nhắn
+        if (message.getDeletedByUserIds() == null) {
+            message.setDeletedByUserIds(new HashSet<>());
+        }
+
+        //  Kiểm tra xem userId đã có trong danh sách chưa
+        if (!message.getDeletedByUserIds().contains(userId)) {
+            message.getDeletedByUserIds().add(userId);
+            return messageRepository.save(message);
+        }
+
+        return message;
     }
 
 }

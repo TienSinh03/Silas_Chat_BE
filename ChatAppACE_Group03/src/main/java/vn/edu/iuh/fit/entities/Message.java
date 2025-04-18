@@ -6,6 +6,7 @@
 
 package vn.edu.iuh.fit.entities;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import org.bson.types.ObjectId;
@@ -14,11 +15,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 import vn.edu.iuh.fit.enums.MessageType;
 import vn.edu.iuh.fit.utils.ObjectIdSerializer;
+import vn.edu.iuh.fit.utils.ObjectIdSetDeserializer;
+import vn.edu.iuh.fit.utils.ObjectIdSetSerializer;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
  * @description:
@@ -65,6 +69,9 @@ public class Message {
     // Quan hệ với FIle
     private List<ObjectId> fileIds; // Danh sách fileId nếu là ảnh/video/file
 
+    @JsonSerialize(using = ObjectIdSetSerializer.class)
+    @JsonDeserialize(using = ObjectIdSetDeserializer.class)
+    private Set<ObjectId> deletedByUserIds; // Danh sách người dùng đã xóa tin nhắn này
 
 }
 
