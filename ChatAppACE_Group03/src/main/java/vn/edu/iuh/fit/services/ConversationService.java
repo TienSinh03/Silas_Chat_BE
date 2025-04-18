@@ -30,4 +30,7 @@ public interface ConversationService {
     List<ConversationDTO> findAllConversationsByUserId(ObjectId userId);
     // Hàm tìm kiếm Id cuộc trò chuyện cuối cùng trong danh sách Id cuộc trò chuyện
     ObjectId getLastMessageId(Set<ObjectId> messageIds);
+    // Hàm tìm hoặc tạo cuộc trò chuyện giữa người gửi và người nhận. Nếu chưa có cuộc trò chuyện, tạo mới.
+    ConversationDTO findOrCreateConversation(ObjectId senderId, String receiverId);
+    ConversationDTO findConversationByMembers(ObjectId senderId, ObjectId receiverId);
 }
