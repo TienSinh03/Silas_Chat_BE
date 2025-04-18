@@ -125,6 +125,7 @@ public class MessageController {
 
 
     @PostMapping("/delete-for-user")
+    @MessageMapping("/chat/delete-for-user")
     public ResponseEntity<ApiResponse<?>> deleteMessageForUser(@RequestBody Map<String, String> request) {
         try {
             ObjectId messageId = new ObjectId(request.get("messageId"));
@@ -138,6 +139,8 @@ public class MessageController {
                         .message("Message not found")
                         .build());
             }
+
+            messagingTemplate.convertAndSend("/chat/message/single/" + updatedMessage.getConversationId(), updatedMessage);
 
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
@@ -160,15 +163,6 @@ public ResponseEntity<ApiResponse<?>> uploadImage(
     System.out.println("Request upload img: " + reqJson);
     ObjectMapper objectMapper = new ObjectMapper();
     ChatMessageRequest chatMessageRequest = null;
-
-
-    @PostMapping(value = "/upload-img", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<?>> uploadImage(
-            @RequestPart("request") String reqJson,
-            @RequestPart(value = "anh", required = false) MultipartFile anh) {
-        System.out.println("Request upload img: " + reqJson);
-        ObjectMapper objectMapper = new ObjectMapper();
-        ChatMessageRequest chatMessageRequest = null;
 
         try {
             chatMessageRequest = objectMapper.readValue(reqJson, ChatMessageRequest.class);
