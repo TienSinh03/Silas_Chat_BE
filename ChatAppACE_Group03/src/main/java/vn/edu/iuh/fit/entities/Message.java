@@ -6,16 +6,23 @@
 
 package vn.edu.iuh.fit.entities;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 import vn.edu.iuh.fit.enums.MessageType;
+import vn.edu.iuh.fit.utils.ObjectIdSerializer;
+import vn.edu.iuh.fit.utils.ObjectIdSetDeserializer;
+import vn.edu.iuh.fit.utils.ObjectIdSetSerializer;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
  * @description:
@@ -32,9 +39,16 @@ import java.util.Map;
 @Document(collection = "messages")
 public class Message {
     @Id
+    @JsonSerialize(using = ObjectIdSerializer.class)
     private ObjectId id;
-    private ObjectId senderId;                  // Người gửi
-    private ObjectId conversationId;            // ID cuộc trò chuyện
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    private ObjectId senderId;// Người gửi
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    private ObjectId conversationId;// ID cuộc trò chuyện
+    @Field("receiverId")
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    private ObjectId receiverId;
+    // ID người nhận
 
     private String content;                     // Nội dung tin nhắn (text)
     private MessageType messageType;
@@ -44,6 +58,8 @@ public class Message {
     private Instant timestamp;                  // Thời gian gửi
     private boolean isSeen;
 
+    private boolean recalled;
+
     private ObjectId replyToMessageId;          // Phản hồi tin nhắn nào (nếu có)
 
     private Map<String, List<ObjectId>> reactions; // Reaction voi tin nhan
@@ -52,6 +68,10 @@ public class Message {
 
     // Quan hệ với FIle
     private List<ObjectId> fileIds; // Danh sách fileId nếu là ảnh/video/file
+
+    @JsonSerialize(using = ObjectIdSetSerializer.class)
+    @JsonDeserialize(using = ObjectIdSetDeserializer.class)
+    private Set<ObjectId> deletedByUserIds; // Danh sách người dùng đã xóa tin nhắn này
 
 }
 

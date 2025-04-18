@@ -21,11 +21,14 @@ import vn.edu.iuh.fit.dtos.request.ChangePasswordRequest;
 import vn.edu.iuh.fit.dtos.request.SignUpRequest;
 import vn.edu.iuh.fit.dtos.request.UpdateUserRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
+import vn.edu.iuh.fit.dtos.response.FriendResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.services.CloudinaryService;
+import vn.edu.iuh.fit.services.FriendService;
 import vn.edu.iuh.fit.services.UserService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,6 +52,9 @@ public class UserController {
 
     @Autowired
     private SimpMessagingTemplate simpMessagingTemplate;
+
+    @Autowired
+    private FriendService friendService;
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<?>> getCurrentUser(@RequestHeader("Authorization") String token) {
@@ -160,5 +166,39 @@ public class UserController {
         Map<String, Boolean> response = new HashMap<>();
         response.put("exists", exists);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/my-friends")
+    public ResponseEntity<ApiResponse<?>> getMyFriends(@RequestHeader("Authorization") String token) {
+        try {
+            UserResponse currentUser = userService.getCurrentUser(token);
+            System.out.println("Current user: " + currentUser.getId());
+            List<FriendResponse> friends = friendService.getFriends(currentUser.getId());
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Get my friends successfully").response(friends).build());
+        } catch (Exception e) {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .status("FAILED")
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<?>> search(@RequestParam("keyword") String keyword) {
+        try {
+            System.out.println("KeyWord: " + keyword);
+            List<UserResponse> userResponses = userService.searchByKeyWord(keyword);
+            if(userResponses.isEmpty()) {
+                return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Not Found User").response("").build());
+            }
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Search user success").response(userResponses).build());
+        } catch (Exception e) {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .status("FAILED")
+                            .message(e.getMessage())
+                            .build());
+        }
     }
 }

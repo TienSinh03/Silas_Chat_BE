@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
+import software.amazon.awssdk.services.sns.model.PublishResponse;
 import vn.edu.iuh.fit.dtos.OtpEntry;
 import vn.edu.iuh.fit.services.SmsService;
 import vn.edu.iuh.fit.utils.FormatPhoneNumber;
@@ -50,6 +51,8 @@ public class SmsServiceImpl implements SmsService {
 
         String message = "Mã OTP của bạn là: " + otp + ". Vui lòng không chia sẻ mã này.";
         long now = Instant.now().toEpochMilli();
+
+
         if(formattedPhoneNumber.startsWith("84")) {
             formattedPhoneNumber = "+" + formattedPhoneNumber;
         }
@@ -80,8 +83,10 @@ public class SmsServiceImpl implements SmsService {
 //                    .phoneNumber(formattedPhoneNumber)
 //                    .messageAttributes(attribute)
 //                    .build();
+//            System.out.println("Request: " + request);
 //
-//            snsClient.publish(request);
+//            PublishResponse response = snsClient.publish(request);
+//            System.out.println("Response: " + response);
     }
 
     public boolean verifyOtp(String phoneNumber, String otp) {

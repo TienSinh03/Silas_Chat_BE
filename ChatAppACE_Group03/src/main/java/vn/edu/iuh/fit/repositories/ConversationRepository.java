@@ -8,11 +8,13 @@ package vn.edu.iuh.fit.repositories;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import vn.edu.iuh.fit.entities.Friend;
+import vn.edu.iuh.fit.entities.Conversation;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /*
  * @description:
@@ -21,10 +23,8 @@ import java.util.Optional;
  * @version:    1.0
  */
 @Repository
-public interface FriendRepository extends MongoRepository<Friend, ObjectId> {
-    List<Friend> findByUserId(ObjectId userId);
-    List<Friend> findByFriendId(ObjectId userId);
+public interface ConversationRepository extends MongoRepository<Conversation, ObjectId> {
+    @Query("{ 'group': :#{#isGroup}, '_id': { $in: ?0 } }")
+    List<Conversation> findOneToOneConversationByMemberIds(Set<ObjectId> memberIds, boolean isGroup);
 
-    // Kiểm tra mối quan hệ bạn bè giữa userId1 và userId2
-    Optional<Friend> findByUserIdAndFriendId(ObjectId userId, ObjectId friendId);
 }
