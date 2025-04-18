@@ -28,9 +28,6 @@ public class MessageController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    @Autowired
-    private ConversationService conversationService;
-
     @PostMapping
     @MessageMapping("/chat/send")
     public ResponseEntity<ApiResponse<?>> sendMessage(@RequestBody ChatMessageRequest request) {
@@ -104,49 +101,4 @@ public class MessageController {
         }
     }
 
-    @PostMapping("/forward")
-    public ResponseEntity<ApiResponse<?>> forwardMessage(@RequestBody Map<String, String> request) {
-        try {
-            ObjectId messageId = new ObjectId(request.get("messageId"));
-            ObjectId senderId = new ObjectId(request.get("senderId"));
-            String receiverId = request.get("receiverId"); // Có thể là userId hoặc groupId
-            String content = request.get("content"); // Nội dung tin nhắn gốc
-
-            // Tìm tin nhắn gốc
-            Message originalMessage = messageService.getMessageById(messageId);
-            if (originalMessage == null || !originalMessage.getSenderId().equals(senderId)) {
-                return ResponseEntity.badRequest().body(ApiResponse.builder()
-                        .status("FAILED")
-                        .message("Message not found or unauthorized")
-                        .build());
-            }
-
-            // Tìm hoặc tạo cuộc trò chuyện đích
-            ConversationDTO conversation = conversationService.findOrCreateConversation(senderId, receiverId);
-
-            // Tạo tin nhắn mới
-            ChatMessageRequest forwardRequest = new ChatMessageRequest();
-            forwardRequest.setConversationId(conversation.getId().toString());
-            forwardRequest.setSenderId(senderId.toString());
-            forwardRequest.setReceiverId(receiverId);
-            forwardRequest.setContent(content);
-            forwardRequest.setMessageType("TEXT"); // Có thể mở rộng cho hình ảnh/file
-
-            Message forwardedMessage = messageService.sendMessage(forwardRequest);
-
-            // Gửi qua WebSocket
-            messagingTemplate.convertAndSend("/chat/message/single/" + forwardedMessage.getConversationId(), forwardedMessage);
-
-            return ResponseEntity.ok(ApiResponse.builder()
-                    .status("SUCCESS")
-                    .message("Message forwarded successfully")
-                    .response(forwardedMessage)
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .status("FAILED")
-                    .message(e.getMessage())
-                    .build());
-        }
-    }
 }
