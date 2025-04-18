@@ -351,6 +351,8 @@ public class ConversationServiceImpl implements ConversationService {
                 .orElse(null);
     }
 
+
+    // Tìm hoặc tạo cuộc trò chuyện giữa người gửi và người nhận
     @Override
     public ConversationDTO findOrCreateConversation(ObjectId senderId, String receiverId) {
         log.debug("Finding or creating conversation for sender: {} and receiver: {}", senderId, receiverId);
