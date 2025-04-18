@@ -119,5 +119,15 @@ public class MessageServiceImpl implements MessageService {
         return message;
     }
 
+    @Override
+    public Message getMessageById(ObjectId messageId) {
+        try {
+            return messageRepository.findById(messageId).orElse(null);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Invalid messageId format: " + messageId);
+            return null;
+        }
+    }
+
 }
 

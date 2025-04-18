@@ -350,4 +350,71 @@ public class ConversationServiceImpl implements ConversationService {
                 .map(Message::getId)
                 .orElse(null);
     }
+
+
+    // Tìm hoặc tạo cuộc trò chuyện giữa người gửi và người nhận
+    @Override
+    public ConversationDTO findOrCreateConversation(ObjectId senderId, String receiverId) {
+        log.debug("Finding or creating conversation for sender: {} and receiver: {}", senderId, receiverId);
+
+        // Kiểm tra xem receiverId là userId hay groupId
+        boolean isGroup = receiverId.startsWith("group_");
+        if (isGroup) {
+            try {
+                ObjectId groupId = new ObjectId(receiverId.replace("group_", ""));
+                ConversationDTO groupConversation = findConversationById(groupId);
+                if (groupConversation != null) {
+                    log.info("Found group conversation with ID: {}", groupId);
+                    return groupConversation;
+                }
+                throw new IllegalArgumentException("Group not found with ID: " + groupId);
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid groupId format: {}", receiverId);
+                throw new IllegalArgumentException("Invalid groupId format: " + receiverId);
+            }
+        }
+
+        // Xử lý cuộc trò chuyện 1-1
+        ObjectId userId;
+        try {
+            userId = new ObjectId(receiverId);
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid userId format: {}", receiverId);
+            throw new IllegalArgumentException("Invalid userId format: " + receiverId);
+        }
+
+        // Kiểm tra xem userId có tồn tại trong hệ thống không
+        User receiver = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        // Tìm cuộc trò chuyện 1-1
+        ConversationDTO existingConversation = findConversationByMembers(senderId, userId);
+        if (existingConversation != null) {
+            log.info("Found existing one-to-one conversation: {}", existingConversation.getId());
+            return existingConversation;
+        }
+
+        // Tạo cuộc trò chuyện mới nếu không tồn tại
+        log.info("Creating new one-to-one conversation between {} and {}", senderId, userId);
+        ConversationDTO newConversation = new ConversationDTO();
+        newConversation.setMemberId(new HashSet<>(Arrays.asList(senderId, userId)));
+        newConversation.setGroup(false);
+        newConversation.setName(receiver.getDisplayName()); // Đặt tên mặc định là tên người nhận
+        newConversation.setAvatar(receiver.getAvatar()); // Đặt avatar mặc định
+        newConversation.setCreatedAt(Instant.now());
+        newConversation.setMessageIds(new HashSet<>());
+        newConversation.setLastMessageId(null);
+        newConversation.setLastMessage(null);
+
+        return createConversationOneToOne(newConversation);
+    }
+
+    @Override
+    public ConversationDTO findConversationByMembers(ObjectId senderId, ObjectId receiverId) {
+        return conversationRepository.findOneToOneConversationByMemberIds(Set.of(senderId, receiverId), false)
+                .stream()
+                .findFirst()
+                .map(this::mapToDTO)
+                .orElse(null);
+    }
 }
