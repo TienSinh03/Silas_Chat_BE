@@ -378,6 +378,7 @@ public class ConversationServiceImpl implements ConversationService {
         ObjectId userId;
         try {
             userId = new ObjectId(receiverId);
+            System.out.println("receiverId Id: " + userId);
         } catch (IllegalArgumentException e) {
             log.error("Invalid userId format: {}", receiverId);
             throw new IllegalArgumentException("Invalid userId format: " + receiverId);
@@ -387,8 +388,11 @@ public class ConversationServiceImpl implements ConversationService {
         User receiver = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
+        System.out.println("receiver user: " + receiver);
+        System.out.println("sednerid : " + senderId);
         // Tìm cuộc trò chuyện 1-1
-        ConversationDTO existingConversation = findConversationByMembers(senderId, userId);
+        ConversationDTO existingConversation = findConversationByMembers(senderId, receiver.getId());
+        System.out.println("existingConversation: " + existingConversation);
         if (existingConversation != null) {
             log.info("Found existing one-to-one conversation: {}", existingConversation.getId());
             return existingConversation;
@@ -397,7 +401,7 @@ public class ConversationServiceImpl implements ConversationService {
         // Tạo cuộc trò chuyện mới nếu không tồn tại
         log.info("Creating new one-to-one conversation between {} and {}", senderId, userId);
         ConversationDTO newConversation = new ConversationDTO();
-        newConversation.setMemberId(new HashSet<>(Arrays.asList(senderId, userId)));
+        newConversation.setMemberId(new HashSet<>(Arrays.asList(senderId, receiver.getId())));
         newConversation.setGroup(false);
         newConversation.setName(receiver.getDisplayName()); // Đặt tên mặc định là tên người nhận
         newConversation.setAvatar(receiver.getAvatar()); // Đặt avatar mặc định
@@ -411,10 +415,13 @@ public class ConversationServiceImpl implements ConversationService {
 
     @Override
     public ConversationDTO findConversationByMembers(ObjectId senderId, ObjectId receiverId) {
-        return conversationRepository.findOneToOneConversationByMemberIds(Set.of(senderId, receiverId), false)
-                .stream()
-                .findFirst()
-                .map(this::mapToDTO)
-                .orElse(null);
+        Conversation conversation = conversationRepository.findOneToOneConversationByTwoMemberIds(
+                new HashSet<>(Arrays.asList(senderId, receiverId)), false);
+        if (conversation == null) {
+            log.info("No conversation found between sender: {} and receiver: {}", senderId, receiverId);
+            return null;
+        }
+        System.out.println("conversation: " + conversation);
+       return this.mapToDTO(conversation);
     }
 }
