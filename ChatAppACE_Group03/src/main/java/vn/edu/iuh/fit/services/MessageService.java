@@ -12,4 +12,7 @@ public interface MessageService {
     List<Message> getMessages(String conversationId);
 
     public Message recallMessage(ObjectId messageId, ObjectId senderId, ObjectId conversationId);
+    Message deleteMessageForUser(ObjectId messageId, ObjectId userId);
+
+    Message getMessageById(ObjectId messageId);
 }
