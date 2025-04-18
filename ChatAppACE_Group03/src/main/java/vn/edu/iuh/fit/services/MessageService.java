@@ -11,4 +11,6 @@ public interface MessageService {
     List<Message> getMessages(String conversationId);
 
     public Message recallMessage(ObjectId messageId, ObjectId senderId, ObjectId conversationId);
+
+    Message getMessageById(ObjectId messageId);
 }

@@ -21,14 +21,14 @@ public class ChatSocketController {
     public void send(@Payload ChatMessageRequest messageRequest, @DestinationVariable String conversationId) {
         Message savedMessage = messageService.sendMessage(messageRequest);
 
-        // 👇 Gửi về người nhận
+        // Gửi về người nhận
         messagingTemplate.convertAndSendToUser(
                 messageRequest.getReceiverId(),
                 "/queue/messages",
                 savedMessage
         );
 
-        // 👇 Gửi về người gửi luôn (để hiển thị chính họ)
+        // Gửi về người gửi luôn (để hiển thị chính họ)
         messagingTemplate.convertAndSendToUser(
                 messageRequest.getSenderId(),
                 "/queue/messages",

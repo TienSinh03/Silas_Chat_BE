@@ -95,5 +95,10 @@ public class MessageServiceImpl implements MessageService {
                 .build();
     }
 
+    @Override
+    public Message getMessageById(ObjectId messageId) {
+        return messageRepository.findById(messageId).orElse(null);
+    }
+
 }
 
