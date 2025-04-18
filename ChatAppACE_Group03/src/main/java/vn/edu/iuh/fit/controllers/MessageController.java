@@ -265,6 +265,8 @@ public ResponseEntity<ApiResponse<?>> uploadImage(
             String receiverId = request.get("receiverId"); // Có thể là userId hoặc groupId
             String content = request.get("content"); // Nội dung tin nhắn gốc
 
+            System.out.println("senderId: " + senderId + " receiverId: " + receiverId + " content: " + content);
+
             // Tìm tin nhắn gốc
 //            Message originalMessage = messageService.getMessageById(messageId);
 //            if (originalMessage == null || !originalMessage.getSenderId().equals(senderId)) {
