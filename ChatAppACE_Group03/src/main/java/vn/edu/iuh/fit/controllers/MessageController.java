@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.iuh.fit.dtos.MessageDTO;
 import vn.edu.iuh.fit.dtos.request.ChatMessageRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.entities.Message;
@@ -31,7 +32,7 @@ public class MessageController {
     public ResponseEntity<ApiResponse<?>> sendMessage(@RequestBody ChatMessageRequest request) {
         try {
             System.out.println("Request: " + request);
-            Message message = messageService.sendMessage(request);
+            MessageDTO message = messageService.sendMessage(request);
 
             messagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
             return ResponseEntity.ok(ApiResponse.builder()

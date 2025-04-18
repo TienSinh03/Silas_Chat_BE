@@ -6,6 +6,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import vn.edu.iuh.fit.dtos.MessageDTO;
 import vn.edu.iuh.fit.dtos.request.ChatMessageRequest;
 import vn.edu.iuh.fit.entities.Message;
 import vn.edu.iuh.fit.services.MessageService;
@@ -19,7 +20,7 @@ public class ChatSocketController {
 
     @MessageMapping("/chat.send/{conversationId}")
     public void send(@Payload ChatMessageRequest messageRequest, @DestinationVariable String conversationId) {
-        Message savedMessage = messageService.sendMessage(messageRequest);
+        MessageDTO savedMessage = messageService.sendMessage(messageRequest);
 
         // 👇 Gửi về người nhận
         messagingTemplate.convertAndSendToUser(
