@@ -99,7 +99,7 @@ public class MessageServiceImpl implements MessageService {
             case TEXT:
                 message.setContent(request.getContent());
                 break;
-            case GIF, IMAGE, STICKER:
+            case GIF, IMAGE, STICKER, FILE:
                 message.setFileUrl(request.getFileUrl());
                 break;
             case EMOJI:
