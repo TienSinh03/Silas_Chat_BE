@@ -101,6 +101,7 @@ public class MessageServiceImpl implements MessageService {
                 break;
             case GIF, IMAGE, STICKER, FILE:
                 message.setFileUrl(request.getFileUrl());
+                message.setContent(request.getContent());
                 break;
             case EMOJI:
                 message.setContent(request.getContent());
