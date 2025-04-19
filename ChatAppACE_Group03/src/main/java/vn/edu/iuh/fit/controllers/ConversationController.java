@@ -49,4 +49,22 @@ public class ConversationController {
         UserResponse user = userService.getCurrentUser(token);
         return ResponseEntity.ok(conversationService.createConversationGroup(user.getId(), conversationDTO));
     }
+
+    @PostMapping("/find-or-create")
+    public ResponseEntity<ConversationDTO> findOrCreateConversation(
+            @RequestParam("senderId") String senderIdStr,
+            @RequestParam("receiverId") String receiverId
+    ) {
+        try {
+            ObjectId senderId = new ObjectId(senderIdStr);
+            ConversationDTO conversation = conversationService.findOrCreateConversation(senderId, receiverId);
+            System.out.println("Sender ID: " + senderId);
+            System.out.println("Receiver ID: " + receiverId);
+            System.out.println("Conversation: " + conversation);
+            return ResponseEntity.ok(conversation);
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid ObjectId format: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
