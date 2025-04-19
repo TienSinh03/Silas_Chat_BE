@@ -24,7 +24,10 @@ import java.util.Set;
  */
 @Repository
 public interface ConversationRepository extends MongoRepository<Conversation, ObjectId> {
-    @Query("{ 'group': :#{#isGroup}, '_id': { $in: ?0 } }")
+    @Query("{ 'is_group': :#{#isGroup}, 'memberId': { $in: ?0 } }")
     List<Conversation> findOneToOneConversationByMemberIds(Set<ObjectId> memberIds, boolean isGroup);
+
+    @Query("{ 'is_group': :#{#isGroup}, 'memberId': { $all: ?0, $size: 2 } }")
+    Conversation findOneToOneConversationByTwoMemberIds(Set<ObjectId> memberIds, boolean isGroup);
 
 }
