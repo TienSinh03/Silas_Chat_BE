@@ -173,7 +173,12 @@ public class MessageController {
             FileRequest fileRequest = null;
 
             if (anh != null && !anh.isEmpty()) {
-                fileUrl = cloudinaryService.uploadImage(anh);
+                if(chatMessageRequest.getMessageType().equals("IMAGE")) {
+                    fileUrl = cloudinaryService.uploadImage(anh);
+
+                } else {
+                    fileUrl = cloudinaryService.uploadFile(anh);
+                }
                 chatMessageRequest.setFileUrl(fileUrl);
 
                 fileRequest = FileRequest.builder()
