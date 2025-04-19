@@ -2,16 +2,12 @@ package vn.edu.iuh.fit.controllers;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
-import com.cloudinary.Api;
-import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -22,10 +18,8 @@ import vn.edu.iuh.fit.dtos.ConversationDTO;
 
 import vn.edu.iuh.fit.dtos.MessageDTO;
 import vn.edu.iuh.fit.dtos.request.ChatMessageRequest;
-import vn.edu.iuh.fit.dtos.request.ImageRequest;
-import vn.edu.iuh.fit.dtos.request.UpdateUserRequest;
+import vn.edu.iuh.fit.dtos.request.FileRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
-import vn.edu.iuh.fit.entities.File;
 import vn.edu.iuh.fit.entities.Message;
 import vn.edu.iuh.fit.services.CloudinaryService;
 import vn.edu.iuh.fit.services.ConversationService;
@@ -138,6 +132,8 @@ public class MessageController {
             ObjectId messageId = new ObjectId(request.get("messageId"));
             ObjectId userId = new ObjectId(request.get("userId"));
 
+            System.out.println("messageId " + messageId + "- userId " + userId);
+
             Message updatedMessage = messageService.deleteMessageForUser(messageId, userId);
 
             if (updatedMessage == null) {
@@ -162,73 +158,55 @@ public class MessageController {
                     .build());
         }
     }
-    
-@PostMapping(value = "/upload-img", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-public ResponseEntity<ApiResponse<?>> uploadImage(
-        @RequestPart("request") String reqJson,
-        @RequestPart(value = "anh", required = false) MultipartFile anh) {
-    System.out.println("Request upload img: " + reqJson);
-    ObjectMapper objectMapper = new ObjectMapper();
-    ChatMessageRequest chatMessageRequest = null;
 
+    @PostMapping(value = "/upload-img", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<?>> uploadImage(
+            @RequestPart("request") String reqJson,
+            @RequestPart(value = "anh", required = false) MultipartFile anh) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ChatMessageRequest chatMessageRequest;
 
         try {
             chatMessageRequest = objectMapper.readValue(reqJson, ChatMessageRequest.class);
 
+            String fileUrl = null;
+            FileRequest fileRequest = null;
+
             if (anh != null && !anh.isEmpty()) {
-                System.out.println("Anh" + anh.getOriginalFilename());
+                fileUrl = cloudinaryService.uploadImage(anh);
+                chatMessageRequest.setFileUrl(fileUrl);
 
-                String imgUrl = cloudinaryService.uploadImage(anh);
-                System.out.println("url" + imgUrl);
-
-                chatMessageRequest.setFileUrl(imgUrl);
-                System.out.println("File name: " + anh.getOriginalFilename());
-                System.out.println("File size: " + anh.getSize());
-
-
-                ImageRequest imageRequest = ImageRequest.builder()
+                fileRequest = FileRequest.builder()
                         .fileName(anh.getOriginalFilename())
                         .fileType(anh.getContentType())
-                        .fileUrl(imgUrl)
+                        .fileUrl(fileUrl)
                         .uploadedAt(Instant.now())
-//                        .sender(chatMessageRequest.getSenderId())
-//                        .receiver(chatMessageRequest.getReceiverId())
-//                        .messageId(chatMessageRequest.getReplyToMessageId())
                         .build();
 
-                imageService.saveImage(imageRequest);
-            } else {
-
+                imageService.saveImage(fileRequest);
             }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.builder()
-                            .status("FAILED")
-                            .message("Invalid 1111111 format")
-                            .build());
-        }
 
-        if (chatMessageRequest.getSenderId() == null || chatMessageRequest.getConversationId() == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.builder()
-                            .status("FAILED")
-                            .message("LOI")
-                            .build());
-        }
+            if (chatMessageRequest.getSenderId() == null || chatMessageRequest.getConversationId() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.builder()
+                                .status("FAILED")
+                                .message("Thiếu senderId hoặc conversationId")
+                                .build());
+            }
 
-        try {
-            MessageDTO message = messageService.sendMessage(chatMessageRequest);
+            // Trả về URL file và chatMessageRequest cho client
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
-                    .message("Upload image successfully")
+                    .message("Upload ảnh thành công")
+                    .response(Map.of("fileUrl", fileUrl != null ? fileUrl : "", "chatMessageRequest", chatMessageRequest))
+                    .build());
 
-                    .response(message)
-                    .build());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.builder()
-                    .status("FAILED")
-                    .message(e.getMessage())
-                    .build());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder()
+                            .status("FAILED")
+                            .message("Định dạng yêu cầu không hợp lệ: " + e.getMessage())
+                            .build());
         }
     }
 
