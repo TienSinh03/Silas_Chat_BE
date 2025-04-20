@@ -241,6 +241,7 @@ public class MessageController {
     }
 
     @PostMapping("/forward")
+    @MessageMapping("/chat/forward")
     public ResponseEntity<ApiResponse<?>> forwardMessage(@RequestBody Map<String, String> request) {
         try {
             ObjectId messageId = new ObjectId(request.get("messageId"));
