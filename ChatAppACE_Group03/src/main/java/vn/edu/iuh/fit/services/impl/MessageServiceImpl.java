@@ -170,6 +170,13 @@ public class MessageServiceImpl implements MessageService {
             message.setRecalled(true);
             message.setContent("Tin nhắn đã được thu hồi.");
 
+            if(message.getMessageType() == MessageType.GIF || message.getMessageType() == MessageType.STICKER ||
+                    message.getMessageType() == MessageType.EMOJI || message.getMessageType() == MessageType.IMAGE ||
+                    message.getMessageType() == MessageType.FILE) {
+                message.setFileUrl(null); // Xóa URL nếu là GIF hoặc STICKER
+                message.setMessageType(MessageType.TEXT); // Đặt lại loại tin nhắn thành TEXT
+            }
+
             return messageRepository.save(message);
         }
 
