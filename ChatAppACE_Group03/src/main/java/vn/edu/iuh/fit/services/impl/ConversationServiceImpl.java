@@ -424,4 +424,33 @@ public class ConversationServiceImpl implements ConversationService {
         System.out.println("conversation: " + conversation);
        return this.mapToDTO(conversation);
     }
+
+    @Override
+    public void addPinnedMessage(ObjectId conversationId, ObjectId messageId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+        List<ObjectId> pinnedMessages = conversation.getPinnedMessages();
+        if (!pinnedMessages.contains(messageId)) {
+            pinnedMessages.add(messageId);
+            conversation.setPinnedMessages(pinnedMessages);
+            conversationRepository.save(conversation);
+        }
+    }
+
+    @Override
+    public void removePinnedMessage(ObjectId conversationId, ObjectId messageId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+        List<ObjectId> pinnedMessages = conversation.getPinnedMessages();
+        pinnedMessages.remove(messageId);
+        conversation.setPinnedMessages(pinnedMessages);
+        conversationRepository.save(conversation);
+    }
+
+    @Override
+    public boolean isMember(ObjectId conversationId, ObjectId userId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
+        return conversation.getMemberId().contains(userId);
+    }
 }
