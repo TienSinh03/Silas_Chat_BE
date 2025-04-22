@@ -64,20 +64,6 @@ public class ConversationServiceImpl implements ConversationService {
                 .messageIds(conversation.getMessageIds())
                 .build();
 
-        // Populate members
-        List<UserResponse> members = conversation.getMemberId().stream()
-                .map(userId -> {
-                    return userRepository.findById(userId)
-                            .map(user -> UserResponse.builder()
-                                    .id(user.getId())
-                                    .displayName(user.getDisplayName())
-                                    .avatar(user.getAvatar())
-                                    .build())
-                            .orElse(null);
-                })
-                .filter(userResponse -> userResponse != null)
-                .collect(Collectors.toList());
-        dto.setMembers(members);
 
         // Populate membersGroup
         List<Member> membersGroup = memberRepository.findByConversationId(conversation.getId());
@@ -85,14 +71,15 @@ public class ConversationServiceImpl implements ConversationService {
             User user = userRepository.findById(member.getUserId()).orElse(null);
             if (user == null) return null;
             return MemberResponse.builder()
-                    .userId(user.getId())
+                    .id(user.getId())
                     .displayName(user.getDisplayName())
                     .avatar(user.getAvatar())
+                    .phone(user.getPhone())
                     .role(member.getRole())
                     .build();
         }).filter(Objects::nonNull).collect(Collectors.toList());
 
-        dto.setMembersGroup(memberResponses);
+        dto.setMembers(memberResponses);
 
         // Populate lastMessage
         if (conversation.getLastMessageId() != null) {
@@ -117,8 +104,6 @@ public class ConversationServiceImpl implements ConversationService {
     private Conversation mapToEntity(ConversationDTO conversationDTO) {
         return modelMapper.map(conversationDTO, Conversation.class);
     }
-
-
 
 
     @Override
@@ -364,21 +349,30 @@ public class ConversationServiceImpl implements ConversationService {
                 .map(member -> {
                     User user = userRepository.findById(member.getUserId()).orElse(null);
                     return user == null ? null : MemberResponse.builder()
-                            .userId(user.getId())
+                            .id(user.getId())
                             .displayName(user.getDisplayName())
                             .avatar(user.getAvatar())
+                            .phone(user.getPhone())
                             .role(member.getRole())
                             .build();
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        result.setMembersGroup(memberResponses);
-        result.setMembers(null); // Ẩn thông tin members trong ConversationDTO vì đã được lấy từ bảng member
+        result.setMembers(memberResponses);
 
         return result;
     }
 
+    private MemberResponse toMemberResponse(UserResponse userResponse, MemberRoles role) {
+        return MemberResponse.builder()
+                .id(userResponse.getId())
+                .displayName(userResponse.getDisplayName())
+                .avatar(userResponse.getAvatar())
+                .phone(userResponse.getPhone())
+                .role(role)
+                .build();
+    }
 
     @Transactional(readOnly = true) // Đánh dấu phương thức này là chỉ đọc để tối ưu hóa hiệu suất
     @Override
@@ -388,6 +382,8 @@ public class ConversationServiceImpl implements ConversationService {
         return mapToDTO(conversation);
     }
 
+
+    // Tìm tất cả các cuộc trò chuyện của người dùng
     @Transactional(readOnly = true)
     @Override
     public List<ConversationDTO> findAllConversationsByUserId(ObjectId userId) {
@@ -396,50 +392,49 @@ public class ConversationServiceImpl implements ConversationService {
             throw new IllegalArgumentException("userId không được null");
         }
 
-        // Tìm tất cả các thành người dùng trong cơ  viên của sở dữ liệu
+        // Tìm tất cả các thành viên người dùng tham gia
         List<Member> members = memberRepository.findByUserId(userId);
-        System.out.println("Members: " + members);
         if (members.isEmpty()) {
             log.debug("No conversations found for userId: {}", userId);
             return Collections.emptyList();
         }
 
-
         // Lấy danh sách ID của các cuộc trò chuyện mà người dùng tham gia
         List<ObjectId> conversationIds = members.stream()
                 .map(Member::getConversationId)
                 .collect(Collectors.toList());
-        System.out.println("Conversation IDs: " + conversationIds);
-
 
         // Tìm tất cả các cuộc trò chuyện dựa trên danh sách ID
         List<Conversation> conversations = conversationRepository.findAllById(conversationIds);
-        System.out.println("Conversations: " + conversations);
+
         return conversations.stream().map(conversation -> {
             ConversationDTO dto = mapToDTO(conversation);
 
-            // Lấy tất cả các Member record thuộc conversation hiện tại
+            // Lấy tất cả các thành viên của cuộc trò chuyện
             List<Member> allMembers = memberRepository.findByConversationId(conversation.getId());
 
-            // Lấy userId của từng thành viên
-            Set<ObjectId> userIds = allMembers.stream()
-                    .map(Member::getUserId)
-                    .collect(Collectors.toSet());
+            // Map userId <-> role
+            Map<ObjectId, MemberRoles> roleMap = allMembers.stream()
+                    .collect(Collectors.toMap(Member::getUserId, Member::getRole));
 
-            // Lấy thông tin chi tiết các user
-            List<UserResponse> userDTOs = userService.getUsersByIds(userIds); // bạn cần tạo hàm này nếu chưa có
-            dto.setMembers(userDTOs);
+            Set<ObjectId> memberIds = roleMap.keySet();
+            dto.setMemberId(memberIds);
 
-            // Lấy thông tin lastMessage nếu tồn tại
+            // Lấy thông tin user
+            List<UserResponse> userResponses = userService.getUsersByIds(memberIds);
+
+            // Chuyển sang MemberResponse
+            List<MemberResponse> memberResponses = userResponses.stream()
+                    .map(user -> toMemberResponse(user, roleMap.get(user.getId())))
+                    .collect(Collectors.toList());
+
+            dto.setMembers(memberResponses);
+
+            // Gán lastMessage nếu có
             if (conversation.getLastMessageId() != null) {
                 Optional<Message> lastMessageOpt = messageRepository.findById(conversation.getLastMessageId());
                 lastMessageOpt.ifPresent(message -> {
                     MessageDTO messageDTO = modelMapper.map(message, MessageDTO.class);
-
-//                    // Lấy thêm thông tin người gửi
-//                    UserResponse sender = userService.getUserById(message.getSenderId());
-//                    messageDTO.setSender(sender);
-
                     dto.setLastMessage(messageDTO);
                 });
             }

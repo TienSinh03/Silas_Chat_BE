@@ -6,6 +6,7 @@
 
 package vn.edu.iuh.fit.dtos.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,8 +28,10 @@ import vn.edu.iuh.fit.utils.ObjectIdSerializer;
 @Builder
 public class MemberResponse {
     @JsonSerialize(using = ObjectIdSerializer.class)
-    private ObjectId userId;
+    private ObjectId id;
+    @JsonProperty("display_name")
     private String displayName;
     private String avatar;
     private MemberRoles role;
+    private String phone;
 }
