@@ -173,9 +173,10 @@ public class MessageController {
             FileRequest fileRequest = null;
 
             if (anh != null && !anh.isEmpty()) {
-                if(chatMessageRequest.getMessageType().equals("IMAGE")) {
+                if (chatMessageRequest.getMessageType().equals("VIDEO")) {
+                    fileUrl = cloudinaryService.uploadVideo(anh);
+                } else if (chatMessageRequest.getMessageType().equals("IMAGE")) {
                     fileUrl = cloudinaryService.uploadImage(anh);
-
                 } else {
                     fileUrl = cloudinaryService.uploadFile(anh);
                 }
@@ -202,7 +203,7 @@ public class MessageController {
             // Trả về URL file và chatMessageRequest cho client
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
-                    .message("Upload ảnh thành công")
+                    .message("Upload thành công")
                     .response(Map.of("fileUrl", fileUrl != null ? fileUrl : "", "chatMessageRequest", chatMessageRequest))
                     .build());
 
