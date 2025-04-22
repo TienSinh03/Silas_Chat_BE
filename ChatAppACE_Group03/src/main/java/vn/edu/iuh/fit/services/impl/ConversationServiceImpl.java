@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.iuh.fit.dtos.ConversationDTO;
 import vn.edu.iuh.fit.dtos.MessageDTO;
+import vn.edu.iuh.fit.dtos.response.MemberResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.Conversation;
 import vn.edu.iuh.fit.entities.Member;
@@ -77,6 +78,21 @@ public class ConversationServiceImpl implements ConversationService {
                 .filter(userResponse -> userResponse != null)
                 .collect(Collectors.toList());
         dto.setMembers(members);
+
+        // Populate membersGroup
+        List<Member> membersGroup = memberRepository.findByConversationId(conversation.getId());
+        List<MemberResponse> memberResponses = membersGroup.stream().map(member -> {
+            User user = userRepository.findById(member.getUserId()).orElse(null);
+            if (user == null) return null;
+            return MemberResponse.builder()
+                    .userId(user.getId())
+                    .displayName(user.getDisplayName())
+                    .avatar(user.getAvatar())
+                    .role(member.getRole())
+                    .build();
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        dto.setMembersGroup(memberResponses);
 
         // Populate lastMessage
         if (conversation.getLastMessageId() != null) {
@@ -218,62 +234,151 @@ public class ConversationServiceImpl implements ConversationService {
         return result;
     }
 
-
+    // Tạo cuộc trò chuyện nhóm
     @Override
+    @Transactional
     public ConversationDTO createConversationGroup(ObjectId creatorId, ConversationDTO conversationDTO) {
-        // Chuyển đổi ConversationDTO thành Conversation entity
-        Conversation conversation = mapToEntity(conversationDTO);
+        // Gọi hàm validateGroupName để kiểm tra tên nhóm
+        validateGroupName(conversationDTO.getName());
 
-        // Thiết lập đây là cuộc trò chuyện nhóm
-        conversation.setGroup(true);
+        Set<ObjectId> allMemberIds = getAllMemberIds(creatorId, conversationDTO);
+        // Gọi hàm validateUserExistence để kiểm tra xem tất cả userIds có tồn tại không
+        validateUserExistence(allMemberIds);
 
-        // Lưu cuộc trò chuyện vào cơ sở dữ liệu
-        Conversation savedConversation = conversationRepository.save(conversation);
-        log.info("Conversation: " + conversation);
+        // Gọi hàm checkIfGroupExistsWithSameMembers để kiểm tra xem đã có nhóm nào tồn tại với cùng tên và thành viên chưa
+        Optional<Conversation> existingGroup = findGroupIfExists(allMemberIds, conversationDTO);
+        if (existingGroup.isPresent()) {
+            return buildConversationDTO(existingGroup.get(), allMemberIds); // trả về nhóm đã tồn tại
+        }
 
-        // Tạo danh sách Member
-        Set<Member> members=new HashSet<>();
 
-        // Thêm người tạo group vào danh sách thành viên với vai trò ADMIN
-        members.add(Member.builder()
-                .conversationId(savedConversation.getId())
-                .userId(creatorId)
-                .role(MemberRoles.ADMIN)
-                .joinedAt(Instant.now())
-                .build());
+        Conversation conversation = saveConversation(conversationDTO, creatorId, allMemberIds, Optional.empty());
+        log.info("Created new group conversation: {}", conversation.getId());
+        // Lưu danh sách thành viên vào cơ sở dữ liệu
+        saveMembers(conversation, creatorId, conversationDTO.getMemberId());
 
-        log.debug("Added creator as ADMIN with ID: {}", creatorId);
+        return buildConversationDTO(conversation, allMemberIds);
+    }
 
+    // Hàm kiểm tra tên nhóm trống hoặc đã tồn tại
+    private void validateGroupName(String groupName) {
+        // Kiểm tra tên nhóm không được null hoặc rỗng
+        if (groupName == null || groupName.trim().isEmpty()) {
+            throw new ConversationCreationException("Tên nhóm không được để trống");
+        }
+    }
+
+    // Hàm lấy tất cả ID thành viên bao gồm cả creatorId
+    private Set<ObjectId> getAllMemberIds(ObjectId creatorId, ConversationDTO conversationDTO) {
         // Lấy danh sách ID của các thành viên từ ConversationDTO
         Set<ObjectId> memberIds = Optional.ofNullable(conversationDTO.getMemberId())
                 .orElseThrow(() -> new ConversationCreationException("memberId không được null"));
+
+        // Kiểm tra số lượng thành viên
+        if (memberIds.size() < 2) {
+            throw new ConversationCreationException("Nhóm trò chuyện phải có ít nhất 2 thành viên khác ngoài người tạo");
+        }
 
         // Kiểm tra trùng lặp với creatorId
         if (memberIds.contains(creatorId)) {
             throw new ConversationCreationException("creatorId không được trùng với memberId");
         }
 
-        // Lấy danh sách ID của các thành viên từ ConversationDTO
+        Set<ObjectId> allMemberIds = new HashSet<>(memberIds);
+        allMemberIds.add(creatorId);
+
+        return allMemberIds;
+    }
+
+    // Hàm kiểm tra xem tất cả userIds có tồn tại không
+    private void validateUserExistence(Set<ObjectId> allMemberIds) {
+        List<User> existingUsers = userRepository.findAllById(allMemberIds);
+        System.out.println("existingUsers: " + existingUsers);
+
+        // Kiểm tra xem tất cả userIds có tồn tại không
+        if (existingUsers.size() != allMemberIds.size()) {
+            throw new ConversationCreationException("Một hoặc nhiều thành viên không tồn tại trong hệ thống");
+        }
+    }
+
+    // Hàm kiểm tra xem đã có nhóm nào tồn tại với cùng tên và thành viên chưa
+    private Optional<Conversation> findGroupIfExists(Set<ObjectId> allMemberIds, ConversationDTO conversationDTO) {
+        if (conversationRepository.existsByNameAndIsGroup(conversationDTO.getName(), true)) {
+            for (Conversation existingGroup : conversationRepository.findByNameAndIsGroup(conversationDTO.getName(), true)) {
+                Set<ObjectId> existingMemberIds = memberRepository.findByConversationId(existingGroup.getId()).stream()
+                        .map(Member::getUserId)
+                        .collect(Collectors.toSet());
+
+                if (existingMemberIds.equals(allMemberIds)) {
+                    log.info("Found existing group with same name and members: {}", existingGroup.getId());
+                    return Optional.of(existingGroup);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    // Hàm lưu cuộc trò chuyện vào cơ sở dữ liệu
+    private Conversation saveConversation(ConversationDTO conversationDTO, ObjectId creatorId, Set<ObjectId> allMemberIds, Optional<Conversation> existingGroup) {
+        Conversation conversation = mapToEntity(conversationDTO);
+        conversation.setName(conversationDTO.getName());
+        conversation.setGroup(true);
+        conversation.setCreatedAt(existingGroup.map(Conversation::getCreatedAt).orElse(Instant.now()));
+        conversation.setMemberId(allMemberIds);
+
+        return conversationRepository.save(conversation);
+    }
+
+    // Hàm lưu danh sách thành viên vào cơ sở dữ liệu
+    private void saveMembers(Conversation conversation, ObjectId creatorId, Set<ObjectId> memberIds) {
+        Set<Member> members = new HashSet<>();
+
+        members.add(Member.builder()
+                .conversationId(conversation.getId())
+                .userId(creatorId)
+                .role(MemberRoles.ADMIN)
+                .joinedAt(Instant.now())
+                .build());
+
         members.addAll(memberIds.stream()
                 .map(memberId -> Member.builder()
-                        .conversationId(savedConversation.getId())
+                        .conversationId(conversation.getId())
                         .userId(memberId)
                         .role(MemberRoles.MEMBER)
                         .joinedAt(Instant.now())
                         .build())
                 .collect(Collectors.toSet()));
 
-        System.out.println("Members: " + members.size());
-
-        // Lưu danh sách member vào cơ sở dữ liệu
         memberRepository.saveAll(members);
+    }
+
+    // Hàm xây dựng ConversationDTO từ Conversation đã lưu
+    private ConversationDTO buildConversationDTO(Conversation savedConversation, Set<ObjectId> allMemberIds) {
         ConversationDTO result = mapToDTO(savedConversation);
-        Set<ObjectId> allMemberIds = members.stream()
-                .map(Member::getUserId)
-                .collect(Collectors.toSet());
         result.setMemberId(allMemberIds);
+        result.setMessageIds(new HashSet<>());
+        result.setLastMessageId(null);
+        result.setLastMessage(null);
+
+        List<MemberResponse> memberResponses = memberRepository.findByConversationId(savedConversation.getId()).stream()
+                .map(member -> {
+                    User user = userRepository.findById(member.getUserId()).orElse(null);
+                    return user == null ? null : MemberResponse.builder()
+                            .userId(user.getId())
+                            .displayName(user.getDisplayName())
+                            .avatar(user.getAvatar())
+                            .role(member.getRole())
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        result.setMembersGroup(memberResponses);
+        result.setMembers(null); // Ẩn thông tin members trong ConversationDTO vì đã được lấy từ bảng member
+
         return result;
     }
+
 
     @Transactional(readOnly = true) // Đánh dấu phương thức này là chỉ đọc để tối ưu hóa hiệu suất
     @Override
