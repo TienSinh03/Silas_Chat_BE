@@ -53,15 +53,20 @@ public class ConversationController {
 
     @PostMapping("/createConversationGroup")
     public ResponseEntity<ConversationDTO> createConversationGroup(@RequestHeader("Authorization") String token, @RequestBody ConversationDTO conversationDTO) {
-        UserResponse user = userService.getCurrentUser(token);
+        try {
+            UserResponse user = userService.getCurrentUser(token);
 
-        ConversationDTO conversation = conversationService.createConversationGroup(user.getId(), conversationDTO);
+            ConversationDTO conversation = conversationService.createConversationGroup(user.getId(), conversationDTO);
 
-        for(ObjectId memberId : conversation.getMemberId()) {
-            System.out.println("memberId: " + memberId);
-            simpMessagingTemplate.convertAndSend("/chat/create/group/" + memberId, conversation);
+            for (ObjectId memberId : conversation.getMemberId()) {
+                System.out.println("memberId: " + memberId);
+                simpMessagingTemplate.convertAndSend("/chat/create/group/" + memberId, conversation);
+            }
+            return ResponseEntity.ok(conversation);
+        } catch (Exception e) {
+            System.out.println("Error creating group conversation: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(conversation);
     }
 
     @PostMapping("/find-or-create")
