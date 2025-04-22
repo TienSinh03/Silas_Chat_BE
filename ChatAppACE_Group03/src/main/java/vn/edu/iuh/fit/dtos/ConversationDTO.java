@@ -71,12 +71,12 @@ public class ConversationDTO {
     @JsonDeserialize(using = ObjectIdSetDeserializer.class)
     private Set<ObjectId> memberId= new HashSet<>();
 
-    @Transient
-    @JsonProperty("members")
-    private List<UserResponse> members = new ArrayList<>();
+//    @Transient
+//    @JsonProperty("members")
+//    private List<UserResponse> members = new ArrayList<>();
 
     @Transient
-    @JsonProperty("membersGroup")
-    private List<MemberResponse> membersGroup = new ArrayList<>();
+    @JsonProperty("members")
+    private List<MemberResponse> members = new ArrayList<>();
 
 }
