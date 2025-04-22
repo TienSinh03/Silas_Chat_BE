@@ -8,9 +8,13 @@ package vn.edu.iuh.fit.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.dtos.ConversationDTO;
+import vn.edu.iuh.fit.dtos.response.MemberResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.services.ConversationService;
 import vn.edu.iuh.fit.services.UserService;
@@ -27,6 +31,9 @@ import vn.edu.iuh.fit.services.UserService;
 public class ConversationController {
     private final ConversationService conversationService;
     private final UserService userService;
+
+    @Autowired
+    private SimpMessagingTemplate simpMessagingTemplate;
 
     @GetMapping("/{id}")
     public ResponseEntity<ConversationDTO> getConversationById(@PathVariable ObjectId id) {
@@ -47,7 +54,14 @@ public class ConversationController {
     @PostMapping("/createConversationGroup")
     public ResponseEntity<ConversationDTO> createConversationGroup(@RequestHeader("Authorization") String token, @RequestBody ConversationDTO conversationDTO) {
         UserResponse user = userService.getCurrentUser(token);
-        return ResponseEntity.ok(conversationService.createConversationGroup(user.getId(), conversationDTO));
+
+        ConversationDTO conversation = conversationService.createConversationGroup(user.getId(), conversationDTO);
+
+        for(ObjectId memberId : conversation.getMemberId()) {
+            System.out.println("memberId: " + memberId);
+            simpMessagingTemplate.convertAndSend("/chat/create/group/" + memberId, conversation);
+        }
+        return ResponseEntity.ok(conversation);
     }
 
     @PostMapping("/find-or-create")
