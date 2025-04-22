@@ -289,4 +289,56 @@ public class MessageController {
                     .build());
         }
     }
+
+    @PostMapping("/pin")
+    @MessageMapping("/chat/pin")
+    public ResponseEntity<ApiResponse<?>> pinMessage(@RequestBody Map<String, String> request) {
+        try {
+            ObjectId messageId = new ObjectId(request.get("messageId"));
+            ObjectId userId = new ObjectId(request.get("userId"));
+            ObjectId conversationId = new ObjectId(request.get("conversationId"));
+
+            Message pinnedMessage = messageService.pinMessage(messageId, userId, conversationId);
+
+            // khi pin thành công, gửi thông báo đến tất cả người dùng trong cuộc trò chuyện
+            messagingTemplate.convertAndSend("/chat/message/single/" + conversationId, pinnedMessage);
+
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Message pinned successfully")
+                    .response(pinnedMessage)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("FAILED")
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
+
+    @PostMapping("/unpin")
+    @MessageMapping("/chat/unpin")
+    public ResponseEntity<ApiResponse<?>> unpinMessage(@RequestBody Map<String, String> request) {
+        try {
+            ObjectId messageId = new ObjectId(request.get("messageId"));
+            ObjectId userId = new ObjectId(request.get("userId"));
+            ObjectId conversationId = new ObjectId(request.get("conversationId"));
+
+            Message unpinnedMessage = messageService.unpinMessage(messageId, userId, conversationId);
+
+            // khi unpin thành công, gửi thông báo đến tất cả người dùng trong cuộc trò chuyện
+            messagingTemplate.convertAndSend("/chat/message/single/" + conversationId, unpinnedMessage);
+
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Message unpinned successfully")
+                    .response(unpinnedMessage)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("FAILED")
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
 }

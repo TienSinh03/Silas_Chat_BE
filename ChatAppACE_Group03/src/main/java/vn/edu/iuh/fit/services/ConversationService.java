@@ -33,4 +33,10 @@ public interface ConversationService {
     // Hàm tìm hoặc tạo cuộc trò chuyện giữa người gửi và người nhận. Nếu chưa có cuộc trò chuyện, tạo mới.
     ConversationDTO findOrCreateConversation(ObjectId senderId, String receiverId);
     ConversationDTO findConversationByMembers(ObjectId senderId, ObjectId receiverId);
+
+
+    void addPinnedMessage(ObjectId conversationId, ObjectId messageId);
+    void removePinnedMessage(ObjectId conversationId, ObjectId messageId);
+    boolean isMember(ObjectId conversationId, ObjectId userId);
+
 }

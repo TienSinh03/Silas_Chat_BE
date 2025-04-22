@@ -21,6 +21,7 @@ import java.util.List;
 public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
+    private final ConversationServiceImpl conversationService;
 
     // Phương thức kiểm tra ObjectId hợp lệ
     private boolean isValidObjectId(String str) {
@@ -232,6 +233,53 @@ public class MessageServiceImpl implements MessageService {
             System.err.println("Invalid messageId format: " + messageId);
             return null;
         }
+    }
+
+    @Override
+    public Message pinMessage(ObjectId messageId, ObjectId userId, ObjectId conversationId) {
+        // Kiểm tra tính hợp lệ của messageId và conversationId
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+
+        // Kiểm tra xem message có thuộc về conversation không
+        if (!message.getConversationId().equals(conversationId)) {
+            throw new IllegalArgumentException("Message does not belong to this conversation");
+        }
+
+        // Kiểm tra xem message đã được ghim chưa
+        if (!conversationService.isMember(conversationId, userId)) {
+            throw new IllegalArgumentException("User is not a member of this conversation");
+        }
+
+        // Pin the message
+        message.setPinned(true);
+        messageRepository.save(message);
+
+        // Thêm messageId vào danh sách pinnedMessages của conversation
+        conversationService.addPinnedMessage(conversationId, messageId);
+
+        return message;
+    }
+
+    @Override
+    public Message unpinMessage(ObjectId messageId, ObjectId userId, ObjectId conversationId) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+
+        if (!message.getConversationId().equals(conversationId)) {
+            throw new IllegalArgumentException("Message does not belong to this conversation");
+        }
+
+        if (!conversationService.isMember(conversationId, userId)) {
+            throw new IllegalArgumentException("User is not a member of this conversation");
+        }
+
+        message.setPinned(false);
+        messageRepository.save(message);
+
+        conversationService.removePinnedMessage(conversationId, messageId);
+
+        return message;
     }
 
 }

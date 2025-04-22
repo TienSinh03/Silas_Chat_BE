@@ -30,4 +30,10 @@ public interface ConversationRepository extends MongoRepository<Conversation, Ob
     @Query("{ 'is_group': :#{#isGroup}, 'memberId': { $all: ?0, $size: 2 } }")
     Conversation findOneToOneConversationByTwoMemberIds(Set<ObjectId> memberIds, boolean isGroup);
 
+    @Query("{'name': {$regex: ?0, $options: 'i'}, 'isGroup': ?1}")
+    List<Conversation> findByNameAndIsGroup(String name, boolean isGroup);
+    @Query("{'is_group': ?0}")
+    List<Conversation> findByIsGroup(boolean isGroup);
+    @Query(value = "{'name': {$regex: ?0, $options: 'i'}, 'isGroup': ?1}", exists = true)
+    boolean existsByNameAndIsGroup(String name, boolean isGroup);
 }
