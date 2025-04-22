@@ -29,14 +29,22 @@ import java.util.UUID;
 public class CloudinaryServiceImpl implements CloudinaryService {
     @Autowired
     private Cloudinary cloudinary;
+
     @Override
     public String uploadImage(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.equals("application/octet-stream"))) {
+            throw new IllegalArgumentException("File is not an image!");
+        }
         try {
-            Map<?,?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-//            System.out.println("Cloudinary result: " + result);
-            return result.get("secure_url").toString();
+            Map<String, Object> uploadOptions = new HashMap<>();
+            uploadOptions.put("resource_type", "image");
+            Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), uploadOptions);
+            String url = result.get("secure_url").toString();
+            System.out.println("Uploaded image URL: " + url);
+            return url;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to upload image", e);
+            throw new RuntimeException("Failed to upload image: " + e.getMessage(), e);
         }
     }
 
@@ -108,6 +116,27 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete image", e);
+        }
+    }
+
+    @Override
+    public String uploadVideo(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("video/")) {
+            throw new IllegalArgumentException("File is not a video!");
+        }
+        if (file.getSize() > 50 * 1024 * 1024) {
+            throw new IllegalArgumentException("Video size exceeds 50MB limit!");
+        }
+        try {
+            Map<String, Object> uploadOptions = new HashMap<>();
+            uploadOptions.put("resource_type", "video");
+            Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), uploadOptions);
+            String url = result.get("secure_url").toString();
+            System.out.println("Uploaded video URL: " + url);
+            return url;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload video: " + e.getMessage(), e);
         }
     }
 }

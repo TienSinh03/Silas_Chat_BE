@@ -74,17 +74,20 @@ public class MessageServiceImpl implements MessageService {
         }
 
         MessageType messageType = MessageType.valueOf(request.getMessageType());
+        System.out.println("MessageType: " + messageType);
 
         // Kiểm tra URL hợp lệ cho GIF/STICKER
-        if (messageType == MessageType.GIF || messageType == MessageType.STICKER) {
-            if (request.getFileUrl() == null || request.getFileUrl().isEmpty()) {
-                throw new IllegalArgumentException("File URL cannot be empty for GIF/STICKER messages");
-            }
-            // Pass both the URL and the MessageType to the isValidUrl method
-            if (!isValidUrl(request.getFileUrl(), messageType)) {
-                throw new IllegalArgumentException("Invalid file URL for GIF/STICKER");
-            }
-        }
+//        if (messageType == MessageType.GIF || messageType == MessageType.STICKER || messageType == MessageType.EMOJI || messageType == MessageType.IMAGE || messageType == MessageType.FILE || messageType == MessageType.VIDEO) {
+//            if (request.getFileUrl() == null || request.getFileUrl().isEmpty()) {
+//                throw new IllegalArgumentException("File URL cannot be empty for GIF/STICKER messages");
+//            }
+//            // Pass both the URL and the MessageType to the isValidUrl method
+//            if (!isValidUrl(request.getFileUrl(), messageType)) {
+//                throw new IllegalArgumentException("Invalid file URL for GIF/STICKER");
+//            }
+//        }
+        System.out.println("reques send: " + request);
+
         Message message = Message.builder()
                 .senderId(new ObjectId(request.getSenderId()))
                 .conversationId(new ObjectId(request.getConversationId()))
@@ -94,12 +97,14 @@ public class MessageServiceImpl implements MessageService {
                 .recalled(false)
                 .build();
 
+        System.out.println("Message before save: " + message);
+
         // Xử lý nội dung dựa trên loại tin nhắn
         switch (messageType) {
             case TEXT:
                 message.setContent(request.getContent());
                 break;
-            case GIF, IMAGE, STICKER, FILE:
+            case GIF, IMAGE, STICKER, FILE, VIDEO:
                 message.setFileUrl(request.getFileUrl());
                 message.setContent(request.getContent());
                 break;
@@ -130,6 +135,8 @@ public class MessageServiceImpl implements MessageService {
                 return url.startsWith("https://media"); // Chỉ chấp nhận GIF từ GIPHY
             } else if (messageType == MessageType.STICKER) {
                 return url.startsWith("https://your-cdn.com/"); // Chỉ chấp nhận sticker từ CDN của bạn
+            } else if (messageType == MessageType.VIDEO) {
+                return url.endsWith(".mp4") || url.endsWith(".avi") || url.endsWith(".mkv"); // Chỉ chấp nhận video với các định dạng này
             }
             return false;
         } catch (Exception e) {
@@ -170,7 +177,7 @@ public class MessageServiceImpl implements MessageService {
             message.setRecalled(true);
             message.setContent("Tin nhắn đã được thu hồi.");
 
-            if(message.getMessageType() == MessageType.GIF || message.getMessageType() == MessageType.STICKER ||
+            if (message.getMessageType() == MessageType.GIF || message.getMessageType() == MessageType.STICKER ||
                     message.getMessageType() == MessageType.EMOJI || message.getMessageType() == MessageType.IMAGE ||
                     message.getMessageType() == MessageType.FILE) {
                 message.setFileUrl(null); // Xóa URL nếu là GIF hoặc STICKER
