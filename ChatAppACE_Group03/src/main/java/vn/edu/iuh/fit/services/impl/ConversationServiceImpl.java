@@ -603,7 +603,7 @@ public class ConversationServiceImpl implements ConversationService {
         // Luu message khi người dùng rời khỏi nhóm
         Message message = Message.builder()
                 .conversationId(conversationDTO.getId())
-                .messageType(MessageType.TEXT)
+                .messageType(MessageType.SYSTEM)
                 .content(user.getDisplayName() + " đã rời khỏi nhóm")
                 .timestamp(Instant.now())
                 .recalled(false)
