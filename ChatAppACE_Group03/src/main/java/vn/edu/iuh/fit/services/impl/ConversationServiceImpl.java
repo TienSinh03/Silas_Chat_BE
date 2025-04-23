@@ -790,4 +790,32 @@ public class ConversationServiceImpl implements ConversationService {
         return message;
     }
 
+    // findUserByIDConversation
+    @Override
+    public List<UserResponse> findUserByIDConversation(ObjectId conversationId) {
+        // Tìm cuộc trò chuyện theo ID
+        ConversationDTO conversationDTO = this.findConversationById(conversationId);
+        if(conversationDTO == null) {
+            throw new ConversationCreationException("Cuộc trò chuyện không tồn tại");
+        }
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if(!conversationDTO.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+        // Lấy danh sách thành viên của cuộc trò chuyện
+        List<Member> members = memberRepository.findByConversationId(conversationId);
+
+        // Lấy danh sách userId từ danh sách thành viên
+        Set<ObjectId> userIds =  members.stream()
+                .map(Member::getUserId)
+                .collect(Collectors.toSet());
+
+        // Tìm tất cả người dùng theo danh sách userId
+        List<UserResponse> users = userService.getUsersByIds(userIds);
+
+        return users;
+    }
+
 }

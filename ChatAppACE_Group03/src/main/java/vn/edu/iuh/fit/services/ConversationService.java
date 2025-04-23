@@ -8,6 +8,7 @@ package vn.edu.iuh.fit.services;
 
 import org.bson.types.ObjectId;
 import vn.edu.iuh.fit.dtos.ConversationDTO;
+import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.Message;
 
 import java.util.List;
@@ -44,5 +45,6 @@ public interface ConversationService {
     public Message leaveGroup(ObjectId conversationId, String token);
     public Message removeGroup(ObjectId conversationId, String token, ObjectId userId);
     public Message addMemberGroup(ObjectId conversationId, ObjectId userId);
+    public List<UserResponse> findUserByIDConversation(ObjectId conversationId);
 
 }
