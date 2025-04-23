@@ -167,4 +167,25 @@ public class ConversationController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @PostMapping("/add-member/{conversationId}")
+    public ResponseEntity<?> addMemberToGroup(@PathVariable ObjectId conversationId, @RequestParam  ObjectId id) {
+        System.out.println("Add member to group conversation with ID: " + conversationId);
+        try {
+            Message message = conversationService.addMemberGroup(conversationId, id);
+
+            simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            System.out.println("Error adding member to group conversation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    /*
+    test api
+    http://localhost:8080/api/v1/conversations/add-member/68075bc43ec6ed45491a7c05
+    {
+        "idUser": "6807a181f727fc5e721618a7"
+    }
+     */
 }
