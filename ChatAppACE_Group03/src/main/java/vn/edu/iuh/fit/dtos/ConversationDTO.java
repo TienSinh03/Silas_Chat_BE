@@ -79,4 +79,9 @@ public class ConversationDTO {
     @JsonProperty("members")
     private List<MemberResponse> members = new ArrayList<>();
 
+    private boolean dissolved;
+    @JsonSerialize(using = ObjectIdSerializer.class)
+    private ObjectId dissolvedBy;
+    private Instant dissolvedAt;
+
 }
