@@ -25,6 +25,7 @@ import vn.edu.iuh.fit.entities.User;
 import vn.edu.iuh.fit.enums.MemberRoles;
 import vn.edu.iuh.fit.enums.MessageType;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
+import vn.edu.iuh.fit.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.repositories.ConversationRepository;
 import vn.edu.iuh.fit.repositories.MemberRepository;
 import vn.edu.iuh.fit.repositories.MessageRepository;
@@ -612,6 +613,76 @@ public class ConversationServiceImpl implements ConversationService {
         message = messageRepository.save(message);
         return message;
 
+    }
+
+    public Message removeGroup(ObjectId conversationId, String token, ObjectId userId) {
+
+        // Lấy thông tin người dùng từ token
+        UserResponse user = userService.getCurrentUser(token);
+
+        User userDelete = userRepository.findById(userId)
+                .orElseThrow(() -> new ConversationCreationException("Người dùng không tồn tại"));
+
+        if(user == null) {
+            throw new ConversationCreationException("Người dùng không tồn tại");
+        }
+
+        // Tìm cuộc trò chuyện theo ID
+        ConversationDTO conversationDTO = this.findConversationById(conversationId);
+        if(conversationDTO == null) {
+            throw new ConversationCreationException("Cuộc trò chuyện không tồn tại");
+        }
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if(!conversationDTO.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+        // Kiểm tra xem người dùng có phải là thành viên của cuộc trò chuyện không
+        if(!this.isMember(conversationId, userDelete.getId())) {
+            throw new ConversationCreationException("Người dùng không phải là thành viên của cuộc trò chuyện");
+        }
+
+        //Kiểm tra xem người dùng có phải là admin không
+        Member memberCurrent  = memberRepository.findByConversationIdAndUserId(conversationId, user.getId())
+                .orElseThrow(() -> new ConversationCreationException("Người dùng không phải là thành viên của cuộc trò chuyện"));
+
+        Member memberDelete  = memberRepository.findByConversationIdAndUserId(conversationId, userDelete.getId())
+                .orElseThrow(() -> new ConversationCreationException("Người dùng cần xóa không phải là thành viên của cuộc trò chuyện"));
+
+        System.out.println("memberDelete: " + memberDelete);
+        System.out.println("member: " + memberCurrent);
+
+        if(memberCurrent.getRole() != MemberRoles.ADMIN) {
+            throw new UnauthorizedException("Chỉ admin mới có quyền xóa thành viên");
+        }
+
+        if(memberDelete.getId().equals(memberCurrent.getId())) {
+            throw new ConversationCreationException("Không thể xóa chính mình");
+        }
+
+        // Xóa người dùng khỏi danh sách thành viên của cuộc trò chuyện
+        conversationDTO.getMemberId().remove(userDelete.getId());
+
+        System.out.println("conversationDTO.getMemberId(): " + conversationDTO.getMemberId());
+
+        this.saveConversation(conversationDTO, userDelete.getId(), conversationDTO.getMemberId(), Optional.empty());
+
+        conversationRepository.save(mapToEntity(conversationDTO));
+
+        // Xóa thành viên khỏi cơ sở dữ liệu
+        memberRepository.deleteByConversationIdAndUserId(conversationId, userDelete.getId());
+
+        Message message = Message.builder()
+                .conversationId(conversationDTO.getId())
+                .messageType(MessageType.SYSTEM)
+                .content(userDelete.getDisplayName() + " đã được bạn xóa ra khỏi nhóm")
+                .timestamp(Instant.now())
+                .recalled(false)
+                .build();
+
+        message = messageRepository.save(message);
+        return message;
     }
 
 }

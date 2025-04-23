@@ -40,5 +40,6 @@ public interface ConversationService {
     boolean isMember(ObjectId conversationId, ObjectId userId);
 
     public Message leaveGroup(ObjectId conversationId, String token);
+    public Message removeGroup(ObjectId conversationId, String token, ObjectId userId);
 
 }

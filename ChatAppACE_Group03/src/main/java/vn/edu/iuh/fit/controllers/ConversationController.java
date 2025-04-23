@@ -104,4 +104,20 @@ public class ConversationController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @DeleteMapping("/leave/{conversationId}/member/{memberId}")
+    public ResponseEntity<?> removeGroup(@PathVariable ObjectId conversationId, @PathVariable ObjectId memberId,@RequestHeader("Authorization") String token) {
+        System.out.println("Leave group conversation with ID: " + conversationId);
+        System.out.println("Member ID: " + memberId);
+        try {
+            Message message = conversationService.removeGroup(conversationId, token, memberId);
+
+            simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            System.out.println("Error leaving group conversation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
