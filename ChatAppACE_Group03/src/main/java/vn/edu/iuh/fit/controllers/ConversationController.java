@@ -9,6 +9,7 @@ package vn.edu.iuh.fit.controllers;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -17,10 +18,14 @@ import vn.edu.iuh.fit.dtos.ConversationDTO;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.dtos.response.MemberResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
+import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
 import vn.edu.iuh.fit.services.ConversationService;
 import vn.edu.iuh.fit.services.UserService;
+
+import java.util.List;
+import java.util.Map;
 
 /*
  * @description:
@@ -90,6 +95,48 @@ public class ConversationController {
         }
     }
 
+    @DeleteMapping("/dissolve/{conversationId}")
+    public ResponseEntity<?> dissolveConversation( @RequestHeader("Authorization") String token, @PathVariable ObjectId conversationId) {
+        try {
+            UserResponse user = userService.getCurrentUser(token);
+
+            System.out.println("User ID: " + user.getId());
+            System.out.println("Conversation ID: " + conversationId);
+            Map<String, Object> result = conversationService.dissolveGroup(conversationId, user.getId()
+            );
+
+            if (!(boolean) result.get("success")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", result.get("message")));
+            }
+
+            // Lấy thông tin từ kết quả service
+            ObjectId dissolvedBy = (ObjectId) result.get("dissolvedBy");
+            List<Member> members = (List<Member>) result.get("members");
+            String conversationName = (String) result.get("conversationName");
+
+            // Gửi thông báo WebSocket cho tất cả thành viên
+            for (Member member : members) {
+                simpMessagingTemplate.convertAndSend(
+                        "/chat/notification/" + member.getUserId(),
+                        Map.of(
+                                "type", "GROUP_DISSOLVED",
+                                "conversationId", conversationId,
+                                "dissolvedBy", dissolvedBy.toString(),
+                                "conversationName", conversationName,
+                                "message", "Trưởng nhóm đã giải tán nhóm"
+                        )
+                );
+            }
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Nhóm đã được giải tán thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi giải tán nhóm: " + e.getMessage()));
+
+        }
+    }
+
     @DeleteMapping("/leave/{conversationId}")
     public ResponseEntity<?> leaveGroup(@PathVariable ObjectId conversationId, @RequestHeader("Authorization") String token) {
         System.out.println("Leave group conversation with ID: " + conversationId);
@@ -106,7 +153,7 @@ public class ConversationController {
     }
 
     @DeleteMapping("/leave/{conversationId}/member/{memberId}")
-    public ResponseEntity<?> removeGroup(@PathVariable ObjectId conversationId, @PathVariable ObjectId memberId,@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> removeMemberFromGroup(@PathVariable ObjectId conversationId, @PathVariable ObjectId memberId,@RequestHeader("Authorization") String token) {
         System.out.println("Leave group conversation with ID: " + conversationId);
         System.out.println("Member ID: " + memberId);
         try {

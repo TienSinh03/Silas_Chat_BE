@@ -11,6 +11,7 @@ import vn.edu.iuh.fit.dtos.ConversationDTO;
 import vn.edu.iuh.fit.entities.Message;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /*
@@ -39,6 +40,7 @@ public interface ConversationService {
     void removePinnedMessage(ObjectId conversationId, ObjectId messageId);
     boolean isMember(ObjectId conversationId, ObjectId userId);
 
+    Map<String, Object> dissolveGroup(ObjectId conversationId, ObjectId userId);
     public Message leaveGroup(ObjectId conversationId, String token);
     public Message removeGroup(ObjectId conversationId, String token, ObjectId userId);
 
