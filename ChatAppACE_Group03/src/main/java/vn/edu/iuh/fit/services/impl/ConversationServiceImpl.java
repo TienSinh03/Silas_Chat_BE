@@ -734,4 +734,82 @@ public class ConversationServiceImpl implements ConversationService {
         return message;
     }
 
+    public Message addMemberGroup(ObjectId conversationId, ObjectId userId) {
+
+        // kiểm tra thông tin uesr có tồn tại chưa
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ConversationCreationException("Người dùng không tồn tại"));
+        // Tìm cuộc trò chuyện theo ID
+        ConversationDTO conversationDTO = this.findConversationById(conversationId);
+        if(conversationDTO == null) {
+            throw new ConversationCreationException("Cuộc trò chuyện không tồn tại");
+        }
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if(!conversationDTO.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+
+        // Kiểm tra xem người dùng đã có trong danh sách thành viên chưa
+        if(conversationDTO.getMemberId().contains(user.getId())) {
+            throw new ConversationCreationException("Người dùng đã có trong danh sách thành viên");
+        }
+        // Thêm người dùng vào danh sách thành viên của cuộc trò chuyện
+        conversationDTO.getMemberId().add(user.getId());
+        System.out.println("conversationDTO.getMemberId(): " + conversationDTO.getMemberId());
+        this.saveConversation(conversationDTO, user.getId(), conversationDTO.getMemberId(), Optional.empty());
+        conversationRepository.save(mapToEntity(conversationDTO));
+        // Lưu thành viên vào cơ sở dữ liệu
+        Member newMember = Member.builder()
+                .conversationId(conversationId)
+                .userId(user.getId())
+                .role(MemberRoles.MEMBER)
+                .joinedAt(Instant.now())
+                .build();
+        memberRepository.save(newMember);
+
+        // lấy tên người dùng theo id
+        User userAdd = userRepository.findById(user.getId())
+                .orElseThrow(() -> new ConversationCreationException("Người dùng không tồn tại"));
+        // Luu message khi người dùng tham gia nhóm
+        Message message = Message.builder()
+                .conversationId(conversationDTO.getId())
+                .messageType(MessageType.SYSTEM)
+                .content(userAdd.getDisplayName() + " đã tham gia nhóm")
+                .timestamp(Instant.now())
+                .recalled(false)
+                .build();
+        message = messageRepository.save(message);
+        return message;
+    }
+
+    // findUserByIDConversation
+    @Override
+    public List<UserResponse> findUserByIDConversation(ObjectId conversationId) {
+        // Tìm cuộc trò chuyện theo ID
+        ConversationDTO conversationDTO = this.findConversationById(conversationId);
+        if(conversationDTO == null) {
+            throw new ConversationCreationException("Cuộc trò chuyện không tồn tại");
+        }
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if(!conversationDTO.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+        // Lấy danh sách thành viên của cuộc trò chuyện
+        List<Member> members = memberRepository.findByConversationId(conversationId);
+
+        // Lấy danh sách userId từ danh sách thành viên
+        Set<ObjectId> userIds =  members.stream()
+                .map(Member::getUserId)
+                .collect(Collectors.toSet());
+
+        // Tìm tất cả người dùng theo danh sách userId
+        List<UserResponse> users = userService.getUsersByIds(userIds);
+
+        return users;
+    }
+
 }
