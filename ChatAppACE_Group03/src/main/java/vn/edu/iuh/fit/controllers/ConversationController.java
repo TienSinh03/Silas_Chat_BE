@@ -14,8 +14,11 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.dtos.ConversationDTO;
+import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.dtos.response.MemberResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
+import vn.edu.iuh.fit.entities.Message;
+import vn.edu.iuh.fit.exceptions.ConversationCreationException;
 import vn.edu.iuh.fit.services.ConversationService;
 import vn.edu.iuh.fit.services.UserService;
 
@@ -84,6 +87,21 @@ public class ConversationController {
         } catch (IllegalArgumentException e) {
             System.out.println("Invalid ObjectId format: " + e.getMessage());
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/leave/{conversationId}")
+    public ResponseEntity<?> leaveGroup(@PathVariable ObjectId conversationId, @RequestHeader("Authorization") String token) {
+        System.out.println("Leave group conversation with ID: " + conversationId);
+        try {
+            Message message = conversationService.leaveGroup(conversationId, token);
+
+            simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
+            return ResponseEntity.ok(message);
+        } catch (ConversationCreationException e) {
+            System.out.println("Error leaving group conversation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

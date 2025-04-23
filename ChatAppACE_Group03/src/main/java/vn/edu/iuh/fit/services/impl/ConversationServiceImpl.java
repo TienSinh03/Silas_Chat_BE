@@ -23,6 +23,7 @@ import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
 import vn.edu.iuh.fit.entities.User;
 import vn.edu.iuh.fit.enums.MemberRoles;
+import vn.edu.iuh.fit.enums.MessageType;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
 import vn.edu.iuh.fit.repositories.ConversationRepository;
 import vn.edu.iuh.fit.repositories.MemberRepository;
@@ -374,7 +375,7 @@ public class ConversationServiceImpl implements ConversationService {
                 .build();
     }
 
-    @Transactional(readOnly = true) // Đánh dấu phương thức này là chỉ đọc để tối ưu hóa hiệu suất
+//    @Transactional(readOnly = true) // Đánh dấu phương thức này là chỉ đọc để tối ưu hóa hiệu suất
     @Override
     public ConversationDTO findConversationById(ObjectId conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId)
@@ -553,4 +554,64 @@ public class ConversationServiceImpl implements ConversationService {
                 .orElseThrow(() -> new IllegalArgumentException("Conversation not found"));
         return conversation.getMemberId().contains(userId);
     }
+
+    @Override
+    public Message leaveGroup(ObjectId conversationId, String token) {
+        // Lấy thông tin người dùng từ token
+        UserResponse user = userService.getCurrentUser(token);
+        if(user == null) {
+            throw new ConversationCreationException("Người dùng không tồn tại");
+        }
+
+        // Tìm cuộc trò chuyện theo ID
+        ConversationDTO conversationDTO = this.findConversationById(conversationId);
+        if(conversationDTO == null) {
+            throw new ConversationCreationException("Cuộc trò chuyện không tồn tại");
+        }
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if(!conversationDTO.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+        // Kiểm tra xem người dùng có phải là thành viên của cuộc trò chuyện không
+        if(!this.isMember(conversationId, user.getId())) {
+            throw new ConversationCreationException("Người dùng không phải là thành viên của cuộc trò chuyện");
+        }
+
+        //Kiểm tra xem người dùng có phải là admin không
+        Member member  = memberRepository.findByConversationIdAndUserId(conversationId, user.getId())
+                .orElseThrow(() -> new ConversationCreationException("Người dùng không phải là thành viên của cuộc trò chuyện"));
+
+        // Nếu người dùng là admin thì gan admin cho người khác
+        if(member.getRole() == MemberRoles.ADMIN) {
+
+        }
+
+        // Xóa người dùng khỏi danh sách thành viên của cuộc trò chuyện
+        conversationDTO.getMemberId().remove(user.getId());
+
+        System.out.println("conversationDTO.getMemberId(): " + conversationDTO.getMemberId());
+
+        this.saveConversation(conversationDTO, user.getId(), conversationDTO.getMemberId(), Optional.empty());
+
+        conversationRepository.save(mapToEntity(conversationDTO));
+
+        // Xóa thành viên khỏi cơ sở dữ liệu
+        memberRepository.deleteByConversationIdAndUserId(conversationId, user.getId());
+
+        // Luu message khi người dùng rời khỏi nhóm
+        Message message = Message.builder()
+                .conversationId(conversationDTO.getId())
+                .messageType(MessageType.SYSTEM)
+                .content(user.getDisplayName() + " đã rời khỏi nhóm")
+                .timestamp(Instant.now())
+                .recalled(false)
+                .build();
+
+        message = messageRepository.save(message);
+        return message;
+
+    }
+
 }
