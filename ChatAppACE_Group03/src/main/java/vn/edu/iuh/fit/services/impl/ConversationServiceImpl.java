@@ -64,6 +64,9 @@ public class ConversationServiceImpl implements ConversationService {
                 .createdAt(conversation.getCreatedAt())
                 .memberId(conversation.getMemberId())
                 .messageIds(conversation.getMessageIds())
+                .dissolved(conversation.isDissolved())
+                .dissolvedBy(conversation.getDissolvedBy())
+                .dissolvedAt(conversation.getDissolvedAt())
                 .build();
 
 
@@ -593,15 +596,6 @@ public class ConversationServiceImpl implements ConversationService {
 
         //Lấy danh sách thành viên còn lại để gửi thông báo
         List<Member> members = memberRepository.findAllByConversationId(conversationId);
-
-        // Gửi thông báo cho tất cả thành viên trong nhóm
-        Message systemMessage = new Message();
-        systemMessage.setContent("Trưởng nhóm đã giải tán nhóm");
-        systemMessage.setConversationId(conversationId);
-        systemMessage.setSenderId(userId);
-        systemMessage.setTimestamp(Instant.now());
-        systemMessage.setMessageType(MessageType.SYSTEM);
-        messageRepository.save(systemMessage);
 
         return Map.of(
                 "success", true,

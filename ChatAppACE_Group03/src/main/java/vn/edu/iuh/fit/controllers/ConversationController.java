@@ -111,20 +111,17 @@ public class ConversationController {
             }
 
             // Lấy thông tin từ kết quả service
-            ObjectId dissolvedBy = (ObjectId) result.get("dissolvedBy");
             List<Member> members = (List<Member>) result.get("members");
             String conversationName = (String) result.get("conversationName");
 
+            System.out.println("Members to notify: " + members.size());
             // Gửi thông báo WebSocket cho tất cả thành viên
             for (Member member : members) {
                 simpMessagingTemplate.convertAndSend(
-                        "/chat/notification/" + member.getUserId(),
+                        "/chat/dissolve/group/" + member.getUserId(),
                         Map.of(
-                                "type", "GROUP_DISSOLVED",
                                 "conversationId", conversationId,
-                                "dissolvedBy", dissolvedBy.toString(),
-                                "conversationName", conversationName,
-                                "message", "Trưởng nhóm đã giải tán nhóm"
+                                "conversationName", conversationName
                         )
                 );
             }
