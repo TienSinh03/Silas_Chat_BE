@@ -557,6 +557,61 @@ public class ConversationServiceImpl implements ConversationService {
     }
 
     @Override
+    public Map<String, Object> dissolveGroup(ObjectId conversationId, ObjectId userId) {
+        Optional<Conversation> conversationOpt = conversationRepository.findById(conversationId);
+
+        // Kiểm tra xem cuộc trò chuyện có tồn tại không
+        if (!conversationOpt.isPresent()) {
+            throw new RuntimeException("Không tìm thấy nhóm trò chuyện");
+        }
+
+        Conversation conversation = conversationOpt.get();
+
+        // Kiểm tra xem đây có phải là nhóm không
+        if (!conversation.isGroup()) {
+            throw new RuntimeException("Chỉ có thể giải tán các cuộc trò chuyện nhóm");
+        }
+
+        Member userMember = memberRepository.findByUserIdAndConversationId(userId, conversationId);
+
+        // Kiểm tra xem người dùng có quyền giải tán nhóm không
+        if (userMember == null || (userMember.getRole() != MemberRoles.ADMIN)) {
+            return Map.of("success", false, "message", "Không có quyền giải tán nhóm");
+        }
+
+        // Đánh dấu nhóm đã giải tán
+        conversation.setDissolved(true);
+        conversation.setDissolvedBy(userId);
+        conversation.setDissolvedAt(Instant.now());
+        conversationRepository.save(conversation);
+
+        //Xóa tất cả tin nhắn trong nhóm
+        messageRepository.deleteAllByConversationId(conversationId);
+
+        // Xóa conversation khỏi danh sách của trưởng nhóm
+        memberRepository.deleteByUserIdAndConversationId(userId, conversationId);
+
+        //Lấy danh sách thành viên còn lại để gửi thông báo
+        List<Member> members = memberRepository.findAllByConversationId(conversationId);
+
+        // Gửi thông báo cho tất cả thành viên trong nhóm
+        Message systemMessage = new Message();
+        systemMessage.setContent("Trưởng nhóm đã giải tán nhóm");
+        systemMessage.setConversationId(conversationId);
+        systemMessage.setSenderId(userId);
+        systemMessage.setTimestamp(Instant.now());
+        systemMessage.setMessageType(MessageType.SYSTEM);
+        messageRepository.save(systemMessage);
+
+        return Map.of(
+                "success", true,
+                "conversationId", conversationId,
+                "dissolvedBy", userId,
+                "members", members,
+                "conversationName", conversation.getName()
+        );
+    }
+
     public Message leaveGroup(ObjectId conversationId, String token) {
         // Lấy thông tin người dùng từ token
         UserResponse user = userService.getCurrentUser(token);

@@ -53,6 +53,10 @@ public class Conversation {
 
     private List<ObjectId> pinnedMessages = new ArrayList<>();
 
+    private boolean dissolved;
+    private ObjectId dissolvedBy;
+    private Instant dissolvedAt;
+
     public Set<ObjectId> getMemberId() {
         return memberId;
     }
