@@ -153,7 +153,7 @@ public class ConversationController {
     }
 
     @DeleteMapping("/leave/{conversationId}/member/{memberId}")
-    public ResponseEntity<?> removeGroup(@PathVariable ObjectId conversationId, @PathVariable ObjectId memberId,@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> removeMemberFromGroup(@PathVariable ObjectId conversationId, @PathVariable ObjectId memberId,@RequestHeader("Authorization") String token) {
         System.out.println("Leave group conversation with ID: " + conversationId);
         System.out.println("Member ID: " + memberId);
         try {
