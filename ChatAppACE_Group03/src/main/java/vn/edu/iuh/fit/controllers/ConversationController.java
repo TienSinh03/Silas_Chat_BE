@@ -181,6 +181,7 @@ public class ConversationController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     /*
     test api
     http://localhost:8080/api/v1/conversations/add-member/68075bc43ec6ed45491a7c05
@@ -188,4 +189,15 @@ public class ConversationController {
         "idUser": "6807a181f727fc5e721618a7"
     }
      */
+
+    @GetMapping("/members/{conversationId}")
+    public ResponseEntity<List<UserResponse>> getMembersByConversationId(@PathVariable ObjectId conversationId) {
+        try {
+            List<UserResponse> members = conversationService.findUserByIDConversation(conversationId);
+            return ResponseEntity.ok(members);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
+        }
+    }
 }
