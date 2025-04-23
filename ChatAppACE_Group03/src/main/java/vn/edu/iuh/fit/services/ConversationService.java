@@ -40,5 +40,11 @@ public interface ConversationService {
     void removePinnedMessage(ObjectId conversationId, ObjectId messageId);
     boolean isMember(ObjectId conversationId, ObjectId userId);
 
+<<<<<<< HEAD
     Map<String, Object> dissolveGroup(ObjectId conversationId, ObjectId userId);
+=======
+    public Message leaveGroup(ObjectId conversationId, String token);
+    public Message removeGroup(ObjectId conversationId, String token, ObjectId userId);
+
+>>>>>>> 1bcf477c74ec0bd30509f9b94ee407470be6e209
 }

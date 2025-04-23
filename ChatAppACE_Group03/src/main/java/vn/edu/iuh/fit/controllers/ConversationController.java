@@ -15,9 +15,12 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.dtos.ConversationDTO;
+import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.dtos.response.MemberResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.Member;
+import vn.edu.iuh.fit.entities.Message;
+import vn.edu.iuh.fit.exceptions.ConversationCreationException;
 import vn.edu.iuh.fit.services.ConversationService;
 import vn.edu.iuh.fit.services.UserService;
 
@@ -130,6 +133,38 @@ public class ConversationController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi giải tán nhóm: " + e.getMessage()));
+
+        }
+    }
+
+    @DeleteMapping("/leave/{conversationId}")
+    public ResponseEntity<?> leaveGroup(@PathVariable ObjectId conversationId, @RequestHeader("Authorization") String token) {
+        System.out.println("Leave group conversation with ID: " + conversationId);
+        try {
+            Message message = conversationService.leaveGroup(conversationId, token);
+
+            simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
+            return ResponseEntity.ok(message);
+        } catch (ConversationCreationException e) {
+            System.out.println("Error leaving group conversation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/leave/{conversationId}/member/{memberId}")
+    public ResponseEntity<?> removeGroup(@PathVariable ObjectId conversationId, @PathVariable ObjectId memberId,@RequestHeader("Authorization") String token) {
+        System.out.println("Leave group conversation with ID: " + conversationId);
+        System.out.println("Member ID: " + memberId);
+        try {
+            Message message = conversationService.removeGroup(conversationId, token, memberId);
+
+            simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            System.out.println("Error leaving group conversation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
