@@ -142,6 +142,13 @@ public class ConversationController {
 
             simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
 
+            ConversationDTO conversation = conversationService.findConversationById(message.getConversationId());
+
+            for (ObjectId memberId : conversation.getMemberId()) {
+                System.out.println("memberId: " + memberId);
+                simpMessagingTemplate.convertAndSend("/chat/create/group/" + memberId, conversation);
+            }
+
             return ResponseEntity.ok(message);
         } catch (ConversationCreationException e) {
             System.out.println("Error leaving group conversation: " + e.getMessage());
@@ -158,6 +165,13 @@ public class ConversationController {
 
             simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
 
+            ConversationDTO conversation = conversationService.findConversationById(message.getConversationId());
+
+            for (ObjectId member_id : conversation.getMemberId()) {
+                System.out.println("memberId: " + member_id);
+                simpMessagingTemplate.convertAndSend("/chat/create/group/" + member_id, conversation);
+            }
+
             return ResponseEntity.ok(message);
         } catch (Exception e) {
             System.out.println("Error leaving group conversation: " + e.getMessage());
@@ -172,6 +186,13 @@ public class ConversationController {
 
             simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
 
+
+            ConversationDTO conversation = conversationService.findConversationById(message.getConversationId());
+
+            for (ObjectId member_id : conversation.getMemberId()) {
+                System.out.println("memberId: " + member_id);
+                simpMessagingTemplate.convertAndSend("/chat/create/group/" + member_id, conversation);
+            }
 
             return ResponseEntity.ok(message);
         } catch (Exception e) {
@@ -198,4 +219,105 @@ public class ConversationController {
                     .body(null);
         }
     }
+
+    @PutMapping("/update-role")
+    public ResponseEntity<?> updateMemberRoleHttp(
+            @RequestBody Map<String, String> payload,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Validate the token and get the requesting user
+            UserResponse requestingUser = userService.getCurrentUser(token);
+            String requestingUserIdStr = requestingUser.getId().toString();
+
+            // Extract data from the payload
+            String conversationIdStr = payload.get("conversationId");
+            String memberIdStr = payload.get("memberId");
+            String newRole = payload.get("role");
+
+            // Validate the payload
+            if (conversationIdStr == null || memberIdStr == null || newRole == null || requestingUserIdStr == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Thiếu các trường bắt buộc trong payload"));
+            }
+
+            ObjectId conversationId = new ObjectId(conversationIdStr);
+            ObjectId memberId = new ObjectId(memberIdStr);
+            ObjectId requestingUserId = new ObjectId(requestingUserIdStr);
+
+            // Update the member's role
+            ConversationDTO updatedConversation = conversationService.updateMemberRole(
+                    conversationId,
+                    memberId,
+                    newRole,
+                    requestingUserId
+            );
+
+            // Notify all members via WebSocket
+            for (ObjectId member : updatedConversation.getMemberId()) {
+                simpMessagingTemplate.convertAndSend(
+                        "/chat/update/group/" + member,
+                        updatedConversation
+                );
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Cập nhật vai trò thành công",
+                    "conversation", updatedConversation
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi cập nhật vai trò: " + e.getMessage()));
+        }
+    }
+
+    // WebSocket endpoint for updating member role (for frontend)
+//    @MessageMapping("/conversation/update-role")
+//    public void updateMemberRoleWebSocket(Map<String, Object> payload) {
+//        try {
+//            // Extract data from the payload
+//            String conversationIdStr = (String) payload.get("conversationId");
+//            String memberIdStr = (String) payload.get("memberId");
+//            String newRole = (String) payload.get("role");
+//            String requestingUserIdStr = (String) payload.get("requestingUserId");
+//
+//            // Validate the payload
+//            if (conversationIdStr == null || memberIdStr == null || newRole == null || requestingUserIdStr == null) {
+//                throw new IllegalArgumentException("Thiếu các trường bắt buộc trong payload");
+//            }
+//
+//            ObjectId conversationId = new ObjectId(conversationIdStr);
+//            ObjectId memberId = new ObjectId(memberIdStr);
+//            ObjectId requestingUserId = new ObjectId(requestingUserIdStr);
+//
+//            // Update the member's role
+//            ConversationDTO updatedConversation = conversationService.updateMemberRole(
+//                    conversationId,
+//                    memberId,
+//                    newRole,
+//                    requestingUserId
+//            );
+//
+//            // Notify all members via WebSocket
+//            for (ObjectId member : updatedConversation.getMemberId()) {
+//                simpMessagingTemplate.convertAndSend(
+//                        "/chat/update/group/" + member,
+//                        updatedConversation
+//                );
+//            }
+//
+//        } catch (Exception e) {
+//            System.out.println("Error updating member role: " + e.getMessage());
+//            // Send an error message back to the client
+//            String requestingUserIdStr = (String) payload.get("requestingUserId");
+//            if (requestingUserIdStr != null) {
+//                simpMessagingTemplate.convertAndSend(
+//                        "/chat/error/" + requestingUserIdStr,
+//                        Map.of("error", "Failed to update member role: " + e.getMessage())
+//                );
+//            }
+//        }
+//    }
+
 }
