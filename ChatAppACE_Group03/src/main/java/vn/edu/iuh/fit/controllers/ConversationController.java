@@ -172,6 +172,7 @@ public class ConversationController {
 
             simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
 
+
             return ResponseEntity.ok(message);
         } catch (Exception e) {
             System.out.println("Error adding member to group conversation: " + e.getMessage());
