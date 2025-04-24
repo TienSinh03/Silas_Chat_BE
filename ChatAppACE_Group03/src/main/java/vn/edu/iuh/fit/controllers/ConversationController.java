@@ -186,6 +186,7 @@ public class ConversationController {
 
             simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
 
+
             ConversationDTO conversation = conversationService.findConversationById(message.getConversationId());
 
             for (ObjectId member_id : conversation.getMemberId()) {
