@@ -47,4 +47,7 @@ public interface ConversationService {
     public Message addMemberGroup(ObjectId conversationId, ObjectId userId);
     public List<UserResponse> findUserByIDConversation(ObjectId conversationId);
 
+    //Haàm cập nhật role thành viên trong nhóm
+    ConversationDTO updateMemberRole(ObjectId conversationId, ObjectId memberId, String newRole, ObjectId requestingUserId);
+
 }
