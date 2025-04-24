@@ -111,20 +111,17 @@ public class ConversationController {
             }
 
             // Lấy thông tin từ kết quả service
-            ObjectId dissolvedBy = (ObjectId) result.get("dissolvedBy");
             List<Member> members = (List<Member>) result.get("members");
             String conversationName = (String) result.get("conversationName");
 
+            System.out.println("Members to notify: " + members.size());
             // Gửi thông báo WebSocket cho tất cả thành viên
             for (Member member : members) {
                 simpMessagingTemplate.convertAndSend(
-                        "/chat/notification/" + member.getUserId(),
+                        "/chat/dissolve/group/" + member.getUserId(),
                         Map.of(
-                                "type", "GROUP_DISSOLVED",
                                 "conversationId", conversationId,
-                                "dissolvedBy", dissolvedBy.toString(),
-                                "conversationName", conversationName,
-                                "message", "Trưởng nhóm đã giải tán nhóm"
+                                "conversationName", conversationName
                         )
                 );
             }
@@ -165,6 +162,39 @@ public class ConversationController {
         } catch (Exception e) {
             System.out.println("Error leaving group conversation: " + e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @PostMapping("/add-member/{conversationId}")
+    public ResponseEntity<?> addMemberToGroup(@PathVariable ObjectId conversationId, @RequestParam  ObjectId id) {
+        System.out.println("Add member to group conversation with ID: " + conversationId);
+        try {
+            Message message = conversationService.addMemberGroup(conversationId, id);
+
+            simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
+            return ResponseEntity.ok(message);
+        } catch (Exception e) {
+            System.out.println("Error adding member to group conversation: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /*
+    test api
+    http://localhost:8080/api/v1/conversations/add-member/68075bc43ec6ed45491a7c05
+    {
+        "idUser": "6807a181f727fc5e721618a7"
+    }
+     */
+
+    @GetMapping("/members/{conversationId}")
+    public ResponseEntity<List<UserResponse>> getMembersByConversationId(@PathVariable ObjectId conversationId) {
+        try {
+            List<UserResponse> members = conversationService.findUserByIDConversation(conversationId);
+            return ResponseEntity.ok(members);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(null);
         }
     }
 }
