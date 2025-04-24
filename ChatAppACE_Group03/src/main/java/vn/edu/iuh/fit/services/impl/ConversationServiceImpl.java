@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -53,6 +55,8 @@ public class ConversationServiceImpl implements ConversationService {
     private final ModelMapper modelMapper;
     private final UserService userService;
     private final UserRepository userRepository;
+    @Autowired
+    private SimpMessagingTemplate simpMessagingTemplate;
 
     private ConversationDTO mapToDTO(Conversation conversation) {
         ConversationDTO dto = ConversationDTO.builder()
@@ -634,8 +638,44 @@ public class ConversationServiceImpl implements ConversationService {
                 .orElseThrow(() -> new ConversationCreationException("Người dùng không phải là thành viên của cuộc trò chuyện"));
 
         // Nếu người dùng là admin thì gan admin cho người khác
-        if(member.getRole() == MemberRoles.ADMIN) {
+        if (member.getRole() == MemberRoles.ADMIN) {
+            List<Member> remainingMembers = memberRepository.findByConversationId(conversationId).stream()
+                    .filter(m -> !m.getUserId().equals(user.getId()))
+                    .collect(Collectors.toList());
 
+            if (remainingMembers.isEmpty()) {
+                // Nếu không còn thành viên nào khác, giải tán nhóm
+                Map<String, Object> dissolveResult = dissolveGroup(conversationId, user.getId());
+                if (!(boolean) dissolveResult.get("success")) {
+                    throw new ConversationCreationException("Failed to dissolve group: " + dissolveResult.get("message"));
+                }
+                Message message = Message.builder()
+                        .conversationId(conversationDTO.getId())
+                        .messageType(MessageType.SYSTEM)
+                        .content("Nhóm đã được giải tán vì không còn thành viên")
+                        .timestamp(Instant.now())
+                        .recalled(false)
+                        .build();
+                return messageRepository.save(message);
+            }
+
+            // Chọn một thành viên còn lại để trở thành admin
+            Member newAdmin = remainingMembers.stream()
+                    .filter(m -> m.getRole() == MemberRoles.DEPUTY)
+                    .findFirst()
+                    .orElse(remainingMembers.get(0)); // Nếu không có deputy, chọn thành viên đầu tiên
+
+            newAdmin.setRole(MemberRoles.ADMIN);
+            memberRepository.save(newAdmin);
+
+            // Gửi thông báo cho tất cả thành viên trong nhóm
+            ConversationDTO updatedConversation = mapToDTO(conversationRepository.findById(conversationId).get());
+            for (ObjectId memberId : updatedConversation.getMemberId()) {
+                simpMessagingTemplate.convertAndSend(
+                        "/chat/update/group/" + memberId,
+                        updatedConversation
+                );
+            }
         }
 
         // Xóa người dùng khỏi danh sách thành viên của cuộc trò chuyện
@@ -810,6 +850,62 @@ public class ConversationServiceImpl implements ConversationService {
         List<UserResponse> users = userService.getUsersByIds(userIds);
 
         return users;
+    }
+
+    @Override
+    public ConversationDTO updateMemberRole(ObjectId conversationId, ObjectId memberId, String newRole, ObjectId requestingUserId) {
+        // Kiểm tra xem cuộc trò chuyện có tồn tại không
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy cuộc trò chuyện có ID: " + conversationId));
+
+        // nếu cuộc trò chuyện không phải là nhóm thì không thể cập nhật vai trò
+        if (!conversation.isGroup()) {
+            throw new ConversationCreationException("Không thể cập nhật vai trò trong cuộc trò chuyện một-một");
+        }
+
+        // Kiểm tra xem người dùng yêu cầu có phải là admin không
+        MemberRoles roleEnum;
+        try {
+            roleEnum = MemberRoles.valueOf(newRole.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ConversationCreationException("Invalid role: " + newRole + ". Valid roles are: " + Arrays.toString(MemberRoles.values()));
+        }
+
+        // Tìm thành viên yêu cầu
+        Member requestingMember = memberRepository.findByConversationIdAndUserId(conversationId, requestingUserId)
+                .orElseThrow(() -> new ConversationCreationException("Người dùng yêu cầu không phải là thành viên của cuộc trò chuyện này"));
+
+        // Kiểm tra xem người yêu cầu có phải là admin không
+        if (requestingMember.getRole() != MemberRoles.ADMIN) {
+            throw new ConversationCreationException("Chỉ có quản trị viên nhóm mới có thể cập nhật vai trò của thành viên");
+        }
+
+        // Tìm thành viên cần cập nhật vai trò
+        Member memberToUpdate = memberRepository.findByConversationIdAndUserId(conversationId, memberId)
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy thành viên trong cuộc trò chuyện này"));
+
+        // Kiểm tra xem người yêu cầu có phải là admin không
+        if (memberToUpdate.getUserId().equals(requestingUserId)) {
+            throw new ConversationCreationException("Admin không thể tự cập nhật vai trò của mình");
+        }
+
+        // Nếu vai trò mới là ADMIN, kiểm tra xem có thành viên nào khác là ADMIN không
+        if (roleEnum == MemberRoles.ADMIN) {
+            List<Member> allMembers = memberRepository.findByConversationId(conversationId);
+            for (Member member : allMembers) {
+                if (member.getRole() == MemberRoles.ADMIN && !member.getUserId().equals(memberId)) {
+                    member.setRole(MemberRoles.MEMBER);
+                    memberRepository.save(member);
+                }
+            }
+        }
+
+        // Update the member's role
+        memberToUpdate.setRole(roleEnum);
+        memberRepository.save(memberToUpdate);
+
+        // Gửi thông báo cho tất cả thành viên trong nhóm
+        return mapToDTO(conversation);
     }
 
 }
