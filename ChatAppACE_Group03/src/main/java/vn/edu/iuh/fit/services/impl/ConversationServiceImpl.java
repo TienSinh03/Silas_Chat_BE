@@ -725,7 +725,7 @@ public class ConversationServiceImpl implements ConversationService {
         Message message = Message.builder()
                 .conversationId(conversationDTO.getId())
                 .messageType(MessageType.SYSTEM)
-                .content(userDelete.getDisplayName() + " đã được bạn xóa ra khỏi nhóm")
+                .content(userDelete.getDisplayName() + " đã được " +user.getDisplayName()+ " xóa ra khỏi nhóm")
                 .timestamp(Instant.now())
                 .recalled(false)
                 .build();

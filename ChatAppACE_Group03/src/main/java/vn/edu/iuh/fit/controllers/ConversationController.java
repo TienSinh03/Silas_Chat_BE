@@ -168,7 +168,7 @@ public class ConversationController {
             ConversationDTO conversation = conversationService.findConversationById(message.getConversationId());
 
             for (ObjectId member_id : conversation.getMemberId()) {
-                System.out.println("memberId: " + memberId);
+                System.out.println("memberId: " + member_id);
                 simpMessagingTemplate.convertAndSend("/chat/create/group/" + member_id, conversation);
             }
 
