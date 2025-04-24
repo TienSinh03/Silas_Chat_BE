@@ -186,6 +186,13 @@ public class ConversationController {
 
             simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
 
+            ConversationDTO conversation = conversationService.findConversationById(message.getConversationId());
+
+            for (ObjectId member_id : conversation.getMemberId()) {
+                System.out.println("memberId: " + member_id);
+                simpMessagingTemplate.convertAndSend("/chat/create/group/" + member_id, conversation);
+            }
+
             return ResponseEntity.ok(message);
         } catch (Exception e) {
             System.out.println("Error adding member to group conversation: " + e.getMessage());
