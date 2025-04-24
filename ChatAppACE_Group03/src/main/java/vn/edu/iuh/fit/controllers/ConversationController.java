@@ -142,6 +142,13 @@ public class ConversationController {
 
             simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
 
+            ConversationDTO conversation = conversationService.findConversationById(message.getConversationId());
+
+            for (ObjectId memberId : conversation.getMemberId()) {
+                System.out.println("memberId: " + memberId);
+                simpMessagingTemplate.convertAndSend("/chat/create/group/" + memberId, conversation);
+            }
+
             return ResponseEntity.ok(message);
         } catch (ConversationCreationException e) {
             System.out.println("Error leaving group conversation: " + e.getMessage());
@@ -157,6 +164,13 @@ public class ConversationController {
             Message message = conversationService.removeGroup(conversationId, token, memberId);
 
             simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
+            ConversationDTO conversation = conversationService.findConversationById(message.getConversationId());
+
+            for (ObjectId member_id : conversation.getMemberId()) {
+                System.out.println("memberId: " + memberId);
+                simpMessagingTemplate.convertAndSend("/chat/create/group/" + member_id, conversation);
+            }
 
             return ResponseEntity.ok(message);
         } catch (Exception e) {
