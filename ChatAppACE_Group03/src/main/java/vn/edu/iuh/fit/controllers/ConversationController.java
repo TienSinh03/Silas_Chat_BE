@@ -20,10 +20,16 @@ import vn.edu.iuh.fit.dtos.response.MemberResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
+import vn.edu.iuh.fit.entities.User;
+import vn.edu.iuh.fit.enums.MessageType;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
+import vn.edu.iuh.fit.repositories.MemberRepository;
+import vn.edu.iuh.fit.repositories.MessageRepository;
+import vn.edu.iuh.fit.repositories.UserRepository;
 import vn.edu.iuh.fit.services.ConversationService;
 import vn.edu.iuh.fit.services.UserService;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +48,12 @@ public class ConversationController {
 
     @Autowired
     private SimpMessagingTemplate simpMessagingTemplate;
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private MessageRepository messageRepository;
 
     @GetMapping("/{id}")
     public ResponseEntity<ConversationDTO> getConversationById(@PathVariable ObjectId id) {
@@ -262,11 +274,27 @@ public class ConversationController {
             );
             System.out.println("Cập nhật vai trò thành công, conversation: " + updatedConversation);
 
+           User memberAdmin = userRepository.findById(requestingUserId).orElseThrow(() -> new RuntimeException("User not found"));
+            User members = userRepository.findById(memberId).orElseThrow(() -> new RuntimeException("User not found"));
+
+            Message message = Message.builder()
+                    .conversationId(updatedConversation.getId())
+                    .messageType(MessageType.SYSTEM)
+                    .content(memberAdmin.getDisplayName() + " đã bổ nhệm "+members.getDisplayName()+" vai trò thành công")
+                    .timestamp(Instant.now())
+                    .recalled(false)
+                    .build();
+
+            messageRepository.save(message);
+
+            simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
+
             // Notify all members via WebSocket
             for (ObjectId member : updatedConversation.getMemberId()) {
                 System.out.println("Gửi thông báo WebSocket tới member: " + member);
                 simpMessagingTemplate.convertAndSend(
-                        "/chat/update/group/" + member,
+                        "/chat/create/group/" + member,
                         updatedConversation
                 );
             }
