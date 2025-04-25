@@ -20,12 +20,14 @@ public class QaCodeServiceImpl implements QaCodeService {
 
 
     @Override
-    public void saveQaCode(String sessionId, Boolean status, ObjectId userId) {
+    public QaCode saveQaCode(String sessionId, Boolean status, ObjectId userId, String token) {
         QaCode qaCode = new QaCode();
         qaCode.setSessionId(sessionId);
         qaCode.setStatus(status);
         qaCode.setUserId(userId);
-        qaCodeRepository.save(qaCode);
+        qaCode.setToken(token);
+
+        return qaCodeRepository.save(qaCode);
     }
 
     @Override
