@@ -210,11 +210,16 @@ public class ConversationController {
      */
 
     @GetMapping("/members/{conversationId}")
-    public ResponseEntity<List<UserResponse>> getMembersByConversationId(@PathVariable ObjectId conversationId) {
+    public ResponseEntity<List<MemberResponse>> getMembersByConversationId(@PathVariable ObjectId conversationId) {
         try {
-            List<UserResponse> members = conversationService.findUserByIDConversation(conversationId);
+            List<MemberResponse> members = conversationService.findUserByIDConversation(conversationId);
+            // In danh sách thành viên ra console
+            members.forEach(member ->
+                    System.out.println("Display Name: " + member.getDisplayName() + ", Role: " + member.getRole())
+            );
             return ResponseEntity.ok(members);
         } catch (Exception e) {
+            System.out.println("Error fetching members: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
         }
@@ -228,14 +233,17 @@ public class ConversationController {
             // Validate the token and get the requesting user
             UserResponse requestingUser = userService.getCurrentUser(token);
             String requestingUserIdStr = requestingUser.getId().toString();
+            System.out.println("Bắt đầu cập nhật vai trò, requestingUserId: " + requestingUserIdStr);
 
             // Extract data from the payload
             String conversationIdStr = payload.get("conversationId");
             String memberIdStr = payload.get("memberId");
             String newRole = payload.get("role");
+            System.out.println("Payload: conversationId=" + conversationIdStr + ", memberId=" + memberIdStr + ", newRole=" + newRole);
 
             // Validate the payload
             if (conversationIdStr == null || memberIdStr == null || newRole == null || requestingUserIdStr == null) {
+                System.out.println("Thiếu các trường bắt buộc trong payload");
                 return ResponseEntity.badRequest()
                         .body(Map.of("success", false, "message", "Thiếu các trường bắt buộc trong payload"));
             }
@@ -245,15 +253,18 @@ public class ConversationController {
             ObjectId requestingUserId = new ObjectId(requestingUserIdStr);
 
             // Update the member's role
+            System.out.println("Gọi service để cập nhật vai trò...");
             ConversationDTO updatedConversation = conversationService.updateMemberRole(
                     conversationId,
                     memberId,
                     newRole,
                     requestingUserId
             );
+            System.out.println("Cập nhật vai trò thành công, conversation: " + updatedConversation);
 
             // Notify all members via WebSocket
             for (ObjectId member : updatedConversation.getMemberId()) {
+                System.out.println("Gửi thông báo WebSocket tới member: " + member);
                 simpMessagingTemplate.convertAndSend(
                         "/chat/update/group/" + member,
                         updatedConversation
@@ -267,6 +278,7 @@ public class ConversationController {
             ));
 
         } catch (Exception e) {
+            System.out.println("Lỗi khi cập nhật vai trò: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi cập nhật vai trò: " + e.getMessage()));
         }
