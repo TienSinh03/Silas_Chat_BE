@@ -16,11 +16,14 @@ public class QaCodeController {
     private QaCodeService qaCodeService;
 
     @PostMapping("/save")
-    public ResponseEntity<Void> saveQaCode(@RequestParam("sessionId") String sessionId,
-                                           @RequestParam("userId") ObjectId userId) {
+    public ResponseEntity<QaCode> saveQaCode(@RequestParam("sessionId") String sessionId,
+                                           @RequestParam("userId") ObjectId userId, @RequestParam("token") String token) {
         Boolean status = true; // Trạng thái mặc định là true
-        qaCodeService.saveQaCode(sessionId, status, userId);
-        return ResponseEntity.ok().build();
+        QaCode qa = qaCodeService.saveQaCode(sessionId, status, userId, token);
+        if (qa == null) {
+            return ResponseEntity.badRequest().build(); // Trả về lỗi nếu không thể lưu
+        }
+        return ResponseEntity.ok(qa); // Trả về đối tượng QaCode đã lưu
 
     }
 
@@ -38,16 +41,14 @@ public class QaCodeController {
 
     // TIM KIEM IDUSER THEO SESSIONID
     @GetMapping("/{sessionId}")
-    public ResponseEntity<User> findUserBySessionId(@PathVariable("sessionId") String sessionId) {
-        User user = qaCodeService.findUserIdBySessionId(sessionId);
-        if (user == null) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<QaCode> findUserBySessionId(@PathVariable("sessionId") String sessionId) {
+        System.out.println("sessionId: " + sessionId);
+        QaCode qaCode = qaCodeService.findUserIdBySessionId(sessionId);
+        if (qaCode == null) {
+            return ResponseEntity.notFound().build(); // mã QR không tồn tại
         }
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(qaCode); // Trả về đối tượng QaCode đã tìm thấy
     }
-
-
-
 
 }
 

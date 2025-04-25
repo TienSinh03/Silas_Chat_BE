@@ -21,10 +21,16 @@ import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.Conversation;
 import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
+import vn.edu.iuh.fit.entities.User;
+import vn.edu.iuh.fit.enums.MessageType;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
+import vn.edu.iuh.fit.repositories.MemberRepository;
+import vn.edu.iuh.fit.repositories.MessageRepository;
+import vn.edu.iuh.fit.repositories.UserRepository;
 import vn.edu.iuh.fit.services.ConversationService;
 import vn.edu.iuh.fit.services.UserService;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +49,12 @@ public class ConversationController {
 
     @Autowired
     private SimpMessagingTemplate simpMessagingTemplate;
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private MessageRepository messageRepository;
 
     @GetMapping("/{id}")
     public ResponseEntity<ConversationDTO> getConversationById(@PathVariable ObjectId id) {
@@ -211,11 +223,16 @@ public class ConversationController {
      */
 
     @GetMapping("/members/{conversationId}")
-    public ResponseEntity<List<UserResponse>> getMembersByConversationId(@PathVariable ObjectId conversationId) {
+    public ResponseEntity<List<MemberResponse>> getMembersByConversationId(@PathVariable ObjectId conversationId) {
         try {
-            List<UserResponse> members = conversationService.findUserByIDConversation(conversationId);
+            List<MemberResponse> members = conversationService.findUserByIDConversation(conversationId);
+            // In danh sách thành viên ra console
+            members.forEach(member ->
+                    System.out.println("Display Name: " + member.getDisplayName() + ", Role: " + member.getRole())
+            );
             return ResponseEntity.ok(members);
         } catch (Exception e) {
+            System.out.println("Error fetching members: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
         }
@@ -229,14 +246,17 @@ public class ConversationController {
             // Validate the token and get the requesting user
             UserResponse requestingUser = userService.getCurrentUser(token);
             String requestingUserIdStr = requestingUser.getId().toString();
+            System.out.println("Bắt đầu cập nhật vai trò, requestingUserId: " + requestingUserIdStr);
 
             // Extract data from the payload
             String conversationIdStr = payload.get("conversationId");
             String memberIdStr = payload.get("memberId");
             String newRole = payload.get("role");
+            System.out.println("Payload: conversationId=" + conversationIdStr + ", memberId=" + memberIdStr + ", newRole=" + newRole);
 
             // Validate the payload
             if (conversationIdStr == null || memberIdStr == null || newRole == null || requestingUserIdStr == null) {
+                System.out.println("Thiếu các trường bắt buộc trong payload");
                 return ResponseEntity.badRequest()
                         .body(Map.of("success", false, "message", "Thiếu các trường bắt buộc trong payload"));
             }
@@ -246,17 +266,36 @@ public class ConversationController {
             ObjectId requestingUserId = new ObjectId(requestingUserIdStr);
 
             // Update the member's role
+            System.out.println("Gọi service để cập nhật vai trò...");
             ConversationDTO updatedConversation = conversationService.updateMemberRole(
                     conversationId,
                     memberId,
                     newRole,
                     requestingUserId
             );
+            System.out.println("Cập nhật vai trò thành công, conversation: " + updatedConversation);
+
+           User memberAdmin = userRepository.findById(requestingUserId).orElseThrow(() -> new RuntimeException("User not found"));
+            User members = userRepository.findById(memberId).orElseThrow(() -> new RuntimeException("User not found"));
+
+            Message message = Message.builder()
+                    .conversationId(updatedConversation.getId())
+                    .messageType(MessageType.SYSTEM)
+                    .content(memberAdmin.getDisplayName() + " đã bổ nhệm "+members.getDisplayName()+" vai trò thành công")
+                    .timestamp(Instant.now())
+                    .recalled(false)
+                    .build();
+
+            messageRepository.save(message);
+
+            simpMessagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
+
 
             // Notify all members via WebSocket
             for (ObjectId member : updatedConversation.getMemberId()) {
+                System.out.println("Gửi thông báo WebSocket tới member: " + member);
                 simpMessagingTemplate.convertAndSend(
-                        "/chat/update/group/" + member,
+                        "/chat/create/group/" + member,
                         updatedConversation
                 );
             }
@@ -268,6 +307,7 @@ public class ConversationController {
             ));
 
         } catch (Exception e) {
+            System.out.println("Lỗi khi cập nhật vai trò: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi cập nhật vai trò: " + e.getMessage()));
         }
@@ -339,5 +379,48 @@ public class ConversationController {
 //            }
 //        }
 //    }
+
+//    UPDATE TÊN NHÓM
+    @PutMapping("/update-group-name")
+    public ResponseEntity<?> updateGroupName(@RequestBody Map<String, String> nameGroup,
+                                             @RequestHeader("Authorization") String token) {
+        try {
+            UserResponse user = userService.getCurrentUser(token);
+            String conversationIdStr = nameGroup.get("conversationId");
+            String newGroupName = nameGroup.get("newGroupName");
+
+            if (conversationIdStr == null || newGroupName == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Thiếu các trường bắt buộc trong payload"));
+            }
+
+            ObjectId conversationId = new ObjectId(conversationIdStr);
+
+            ConversationDTO updatedConversation = conversationService.updateGroupName(conversationId, newGroupName);
+
+            // Notify all members via WebSocket
+            for (ObjectId member : updatedConversation.getMemberId()) {
+                simpMessagingTemplate.convertAndSend(
+                        "/chat/create/group/" + member,
+                        updatedConversation
+                );
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Cập nhật tên nhóm thành công",
+                    "conversation", updatedConversation
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi cập nhật tên nhóm: " + e.getMessage()));
+        }
+
+    }
+
+
+
+
 
 }

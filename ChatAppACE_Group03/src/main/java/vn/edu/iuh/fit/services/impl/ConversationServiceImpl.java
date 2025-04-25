@@ -829,30 +829,42 @@ public class ConversationServiceImpl implements ConversationService {
 
     // findUserByIDConversation
     @Override
-    public List<UserResponse> findUserByIDConversation(ObjectId conversationId) {
+    public List<MemberResponse> findUserByIDConversation(ObjectId conversationId) {
         // Tìm cuộc trò chuyện theo ID
         ConversationDTO conversationDTO = this.findConversationById(conversationId);
-        if(conversationDTO == null) {
+        if (conversationDTO == null) {
             throw new ConversationCreationException("Cuộc trò chuyện không tồn tại");
         }
 
         // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
-        if(!conversationDTO.isGroup()) {
+        if (!conversationDTO.isGroup()) {
             throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
         }
 
         // Lấy danh sách thành viên của cuộc trò chuyện
         List<Member> members = memberRepository.findByConversationId(conversationId);
 
-        // Lấy danh sách userId từ danh sách thành viên
-        Set<ObjectId> userIds =  members.stream()
-                .map(Member::getUserId)
-                .collect(Collectors.toSet());
+        // Chuyển đổi danh sách Member thành MemberResponse
+        List<MemberResponse> memberResponses = members.stream()
+                .map(member -> {
+                    // Tìm thông tin người dùng từ UserRepository
+                    User user = userRepository.findById(member.getUserId())
+                            .orElse(null);
+                    if (user == null) {
+                        return null; // Bỏ qua nếu không tìm thấy user
+                    }
+                    return MemberResponse.builder()
+                            .id(user.getId())
+                            .displayName(user.getDisplayName())
+                            .avatar(user.getAvatar())
+                            .phone(user.getPhone())
+                            .role(member.getRole()) // Lấy vai trò từ Member
+                            .build();
+                })
+                .filter(Objects::nonNull) // Loại bỏ các phần tử null
+                .collect(Collectors.toList());
 
-        // Tìm tất cả người dùng theo danh sách userId
-        List<UserResponse> users = userService.getUsersByIds(userIds);
-
-        return users;
+        return memberResponses;
     }
 
     @Override
@@ -948,6 +960,27 @@ public class ConversationServiceImpl implements ConversationService {
         conversationRepository.save(conversation);
 
          return mapToDTO(conversation);
+    }
+
+    @Override
+    public ConversationDTO updateGroupName(ObjectId conversationId, String newGroupName) {
+
+        // Kiểm tra xem cuộc trò chuyện có tồn tại không
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy cuộc trò chuyện với ID: " + conversationId));
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if (!conversation.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+        // Cập nhật tên nhóm
+        conversation.setName(newGroupName);
+        conversationRepository.save(conversation);
+
+        return mapToDTO(conversation);
+
+
     }
 
 }

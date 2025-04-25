@@ -20,12 +20,14 @@ public class QaCodeServiceImpl implements QaCodeService {
 
 
     @Override
-    public void saveQaCode(String sessionId, Boolean status, ObjectId userId) {
+    public QaCode saveQaCode(String sessionId, Boolean status, ObjectId userId, String token) {
         QaCode qaCode = new QaCode();
         qaCode.setSessionId(sessionId);
         qaCode.setStatus(status);
         qaCode.setUserId(userId);
-        qaCodeRepository.save(qaCode);
+        qaCode.setToken(token);
+
+        return qaCodeRepository.save(qaCode);
     }
 
     @Override
@@ -42,13 +44,13 @@ public class QaCodeServiceImpl implements QaCodeService {
     }
 
     @Override
-    public User findUserIdBySessionId(String sessionId) {
+    public QaCode findUserIdBySessionId(String sessionId) {
         QaCode qaCode = qaCodeRepository.findBySessionId(sessionId);
-        if (qaCode != null) {
-            ObjectId userId = qaCode.getUserId();
-            return userRepository.findById(userId).orElse(null); // Trả về User hoặc null
-        }
-        return null;
+        System.out.println("qaCode: " + qaCode);
+       if(qaCode != null) {
+           return qaCode;
+       }
+       return null;
     }
 
 }
