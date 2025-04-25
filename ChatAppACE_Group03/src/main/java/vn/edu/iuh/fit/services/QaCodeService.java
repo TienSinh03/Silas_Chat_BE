@@ -12,5 +12,5 @@ public interface QaCodeService {
     void updateStatus(String sessionId, Boolean status);
 
     //    // TIM KIEM IDUSER THEO SESSIONID
-    User findUserIdBySessionId(String sessionId);
+    QaCode findUserIdBySessionId(String sessionId);
 }

@@ -962,4 +962,25 @@ public class ConversationServiceImpl implements ConversationService {
          return mapToDTO(conversation);
     }
 
+    @Override
+    public ConversationDTO updateGroupName(ObjectId conversationId, String newGroupName) {
+
+        // Kiểm tra xem cuộc trò chuyện có tồn tại không
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy cuộc trò chuyện với ID: " + conversationId));
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if (!conversation.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+        // Cập nhật tên nhóm
+        conversation.setName(newGroupName);
+        conversationRepository.save(conversation);
+
+        return mapToDTO(conversation);
+
+
+    }
+
 }

@@ -44,13 +44,13 @@ public class QaCodeServiceImpl implements QaCodeService {
     }
 
     @Override
-    public User findUserIdBySessionId(String sessionId) {
+    public QaCode findUserIdBySessionId(String sessionId) {
         QaCode qaCode = qaCodeRepository.findBySessionId(sessionId);
-        if (qaCode != null) {
-            ObjectId userId = qaCode.getUserId();
-            return userRepository.findById(userId).orElse(null); // Trả về User hoặc null
-        }
-        return null;
+        System.out.println("qaCode: " + qaCode);
+       if(qaCode != null) {
+           return qaCode;
+       }
+       return null;
     }
 
 }
