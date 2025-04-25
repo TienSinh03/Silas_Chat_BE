@@ -1,10 +1,11 @@
 package vn.edu.iuh.fit.services;
 
 import org.bson.types.ObjectId;
+import vn.edu.iuh.fit.entities.QaCode;
 import vn.edu.iuh.fit.entities.User;
 
 public interface QaCodeService {
-    void saveQaCode(String sessionId, Boolean status, ObjectId userId);
+    QaCode saveQaCode(String sessionId, Boolean status, ObjectId userId, String token);
 
     Boolean checkStatus(String sessionId);
 

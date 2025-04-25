@@ -19,5 +19,6 @@ public class QaCode {
     private String sessionId;
 
     private ObjectId userId;
+    private String token;
 
 }
