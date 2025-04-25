@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.services.sns.model.ResourceNotFoundException;
 import vn.edu.iuh.fit.dtos.ConversationDTO;
 import vn.edu.iuh.fit.dtos.MessageDTO;
 import vn.edu.iuh.fit.dtos.response.MemberResponse;
@@ -27,6 +28,7 @@ import vn.edu.iuh.fit.entities.User;
 import vn.edu.iuh.fit.enums.MemberRoles;
 import vn.edu.iuh.fit.enums.MessageType;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
+import vn.edu.iuh.fit.exceptions.ConversationNotFoundException;
 import vn.edu.iuh.fit.exceptions.UnauthorizedException;
 import vn.edu.iuh.fit.repositories.ConversationRepository;
 import vn.edu.iuh.fit.repositories.MemberRepository;
@@ -71,6 +73,7 @@ public class ConversationServiceImpl implements ConversationService {
                 .dissolved(conversation.isDissolved())
                 .dissolvedBy(conversation.getDissolvedBy())
                 .dissolvedAt(conversation.getDissolvedAt())
+                .removedByUserIds(conversation.getRemovedByUserIds())
                 .build();
 
 
@@ -765,7 +768,7 @@ public class ConversationServiceImpl implements ConversationService {
         Message message = Message.builder()
                 .conversationId(conversationDTO.getId())
                 .messageType(MessageType.SYSTEM)
-                .content(userDelete.getDisplayName() + " đã được bạn xóa ra khỏi nhóm")
+                .content(userDelete.getDisplayName() + " đã được " +user.getDisplayName()+ " xóa ra khỏi nhóm")
                 .timestamp(Instant.now())
                 .recalled(false)
                 .build();
@@ -918,6 +921,45 @@ public class ConversationServiceImpl implements ConversationService {
 
         // Gửi thông báo cho tất cả thành viên trong nhóm
         return mapToDTO(conversation);
+    }
+
+    @Override
+    public ConversationDTO deleteConversationForUser(ObjectId conversationId, ObjectId userId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ConversationNotFoundException("Không tìm thấy cuộc trò chuyện với ID: " + conversationId));
+
+
+        if (!conversation.getMemberId().contains(userId)) {
+            throw new UnauthorizedException("Bạn không phải thành viên của cuộc trò chuyện này");
+        }
+
+        if (conversation.getRemovedByUserIds() == null) {
+            conversation.setRemovedByUserIds(new HashSet<>());
+        }
+
+        // Đánh dấu cuộc trò chuyện là đã bị xóa bởi người dùng
+        conversation.getRemovedByUserIds().add(userId);
+
+        // Xóa thành viên khỏi cơ sở dữ liệu
+         memberRepository.deleteByConversationIdAndUserId(conversationId, userId);
+
+        // Cập nhật lại danh sách thành viên
+        conversation.getMemberId().remove(userId);
+
+        // Nêú cuộc trò chuyện không còn thành viên nào thì xóa cuộc trò chuyện
+        if (conversation.getMemberId().isEmpty()) {
+            // Xóa tất cả tin nhắn của cuộc trò chuyện
+            messageRepository.deleteAllByConversationId(conversationId);
+
+            // Xóa conversation
+            conversationRepository.deleteById(conversationId);
+
+            return null;
+        }
+
+        conversationRepository.save(conversation);
+
+         return mapToDTO(conversation);
     }
 
 }
