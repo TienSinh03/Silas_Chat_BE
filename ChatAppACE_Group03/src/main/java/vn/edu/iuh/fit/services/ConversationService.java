@@ -50,4 +50,5 @@ public interface ConversationService {
     //Haàm cập nhật role thành viên trong nhóm
     ConversationDTO updateMemberRole(ObjectId conversationId, ObjectId memberId, String newRole, ObjectId requestingUserId);
 
+    ConversationDTO deleteConversationForUser(ObjectId conversationId, ObjectId userId);
 }

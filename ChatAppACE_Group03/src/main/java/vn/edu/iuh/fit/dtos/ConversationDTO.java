@@ -71,10 +71,6 @@ public class ConversationDTO {
     @JsonDeserialize(using = ObjectIdSetDeserializer.class)
     private Set<ObjectId> memberId= new HashSet<>();
 
-//    @Transient
-//    @JsonProperty("members")
-//    private List<UserResponse> members = new ArrayList<>();
-
     @Transient
     @JsonProperty("members")
     private List<MemberResponse> members = new ArrayList<>();
@@ -83,5 +79,9 @@ public class ConversationDTO {
     @JsonSerialize(using = ObjectIdSerializer.class)
     private ObjectId dissolvedBy;
     private Instant dissolvedAt;
+
+    @JsonSerialize(using = ObjectIdSetSerializer.class)
+    @JsonDeserialize(using = ObjectIdSetDeserializer.class)
+    private Set<ObjectId> removedByUserIds = new HashSet<>();
 
 }
