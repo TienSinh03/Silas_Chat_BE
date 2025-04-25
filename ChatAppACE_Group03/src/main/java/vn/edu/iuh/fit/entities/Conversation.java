@@ -45,6 +45,7 @@ public class Conversation {
     private ObjectId lastMessageId; // Lưu messageId cuối cùng
     private Instant createdAt;
 
+    @Getter
     @JsonSerialize(contentUsing = ObjectIdSerializer.class)
     private Set<ObjectId> memberId;
 
@@ -57,7 +58,4 @@ public class Conversation {
     private ObjectId dissolvedBy;
     private Instant dissolvedAt;
 
-    public Set<ObjectId> getMemberId() {
-        return memberId;
-    }
 }
