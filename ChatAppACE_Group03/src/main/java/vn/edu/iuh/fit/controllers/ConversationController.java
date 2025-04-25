@@ -18,6 +18,7 @@ import vn.edu.iuh.fit.dtos.ConversationDTO;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.dtos.response.MemberResponse;
 import vn.edu.iuh.fit.dtos.response.UserResponse;
+import vn.edu.iuh.fit.entities.Conversation;
 import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
@@ -112,17 +113,17 @@ public class ConversationController {
 
             // Lấy thông tin từ kết quả service
             List<Member> members = (List<Member>) result.get("members");
-            String conversationName = (String) result.get("conversationName");
+            ObjectId conversationIdRS = (ObjectId) result.get("conversationId");
+            System.out.println("Conversation Id: " + conversationIdRS);
+
+            ConversationDTO conversation = conversationService.findConversationById(conversationIdRS);
 
             System.out.println("Members to notify: " + members.size());
             // Gửi thông báo WebSocket cho tất cả thành viên
             for (Member member : members) {
                 simpMessagingTemplate.convertAndSend(
                         "/chat/dissolve/group/" + member.getUserId(),
-                        Map.of(
-                                "conversationId", conversationId,
-                                "conversationName", conversationName
-                        )
+                        conversation
                 );
             }
 
@@ -283,6 +284,8 @@ public class ConversationController {
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(Map.of("success", false, "message", "Cuộc trò chuyện xóa hoàn toàn"));
             }
+            System.out.println("Cuộc trò chuyện đã được xóa cho người dùng: " + conversation);
+            simpMessagingTemplate.convertAndSend("/chat/delete/" + user.getId(), conversation);
             return ResponseEntity.ok(conversation);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
