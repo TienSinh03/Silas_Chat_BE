@@ -593,6 +593,7 @@ public class ConversationServiceImpl implements ConversationService {
         conversation.setDissolved(true);
         conversation.setDissolvedBy(userId);
         conversation.setDissolvedAt(Instant.now());
+        conversation.getMemberId().remove(userId);
         conversationRepository.save(conversation);
 
         //Xóa tất cả tin nhắn trong nhóm
@@ -608,8 +609,7 @@ public class ConversationServiceImpl implements ConversationService {
                 "success", true,
                 "conversationId", conversationId,
                 "dissolvedBy", userId,
-                "members", members,
-                "conversationName", conversation.getName()
+                "members", members
         );
     }
 
