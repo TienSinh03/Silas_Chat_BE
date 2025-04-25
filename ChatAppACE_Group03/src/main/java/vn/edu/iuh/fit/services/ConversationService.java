@@ -51,4 +51,7 @@ public interface ConversationService {
     ConversationDTO updateMemberRole(ObjectId conversationId, ObjectId memberId, String newRole, ObjectId requestingUserId);
 
     ConversationDTO deleteConversationForUser(ObjectId conversationId, ObjectId userId);
+
+    // UPDATE TÊN NHÓM
+    ConversationDTO updateGroupName(ObjectId conversationId, String newGroupName);
 }

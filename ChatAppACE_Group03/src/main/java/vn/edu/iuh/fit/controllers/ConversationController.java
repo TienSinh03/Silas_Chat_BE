@@ -377,4 +377,47 @@ public class ConversationController {
 //        }
 //    }
 
+//    UPDATE TÊN NHÓM
+    @PutMapping("/update-group-name")
+    public ResponseEntity<?> updateGroupName(@RequestBody Map<String, String> nameGroup,
+                                             @RequestHeader("Authorization") String token) {
+        try {
+            UserResponse user = userService.getCurrentUser(token);
+            String conversationIdStr = nameGroup.get("conversationId");
+            String newGroupName = nameGroup.get("newGroupName");
+
+            if (conversationIdStr == null || newGroupName == null) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Thiếu các trường bắt buộc trong payload"));
+            }
+
+            ObjectId conversationId = new ObjectId(conversationIdStr);
+
+            ConversationDTO updatedConversation = conversationService.updateGroupName(conversationId, newGroupName);
+
+            // Notify all members via WebSocket
+            for (ObjectId member : updatedConversation.getMemberId()) {
+                simpMessagingTemplate.convertAndSend(
+                        "/chat/create/group/" + member,
+                        updatedConversation
+                );
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Cập nhật tên nhóm thành công",
+                    "conversation", updatedConversation
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi cập nhật tên nhóm: " + e.getMessage()));
+        }
+
+    }
+
+
+
+
+
 }
