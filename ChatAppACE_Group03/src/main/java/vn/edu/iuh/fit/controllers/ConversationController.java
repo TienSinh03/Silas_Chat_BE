@@ -272,6 +272,23 @@ public class ConversationController {
         }
     }
 
+    @PostMapping("/delete-for-user/{conversationId}")
+    public ResponseEntity<?> deleteConversationForUser(
+            @PathVariable ObjectId conversationId,
+            @RequestHeader("Authorization") String token) {
+        try {
+            UserResponse user = userService.getCurrentUser(token);
+            ConversationDTO conversation = conversationService.deleteConversationForUser(conversationId, user.getId());
+            if (conversation == null) {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(Map.of("success", false, "message", "Cuộc trò chuyện xóa hoàn toàn"));
+            }
+            return ResponseEntity.ok(conversation);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi xóa cuộc trò chuyện: " + e.getMessage()));
+        }
+    }
     // WebSocket endpoint for updating member role (for frontend)
 //    @MessageMapping("/conversation/update-role")
 //    public void updateMemberRoleWebSocket(Map<String, Object> payload) {

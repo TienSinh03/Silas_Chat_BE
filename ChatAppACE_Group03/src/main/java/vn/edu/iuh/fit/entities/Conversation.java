@@ -57,6 +57,8 @@ public class Conversation {
     private ObjectId dissolvedBy;
     private Instant dissolvedAt;
 
+    private Set<ObjectId> removedByUserIds = new HashSet<>();
+
     public Set<ObjectId> getMemberId() {
         return memberId;
     }
