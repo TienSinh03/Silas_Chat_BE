@@ -78,6 +78,7 @@ public class SecurityConfig {
             "/ws/**",
             "/api/v1/qacode/**",
             "/api/v1/qacode",
+            "/api/v1/user/me/**",
 
     };
 
