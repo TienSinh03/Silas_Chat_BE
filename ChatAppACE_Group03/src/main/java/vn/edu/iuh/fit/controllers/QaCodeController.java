@@ -38,7 +38,7 @@ public class QaCodeController {
     }
 
 
-
+    // http:// localhost:8080/api/v1/qacode/42bdd7a5-0e74-44e9-81c2-04017b9d02be
     // TIM KIEM IDUSER THEO SESSIONID
     @GetMapping("/{sessionId}")
     public ResponseEntity<QaCode> findUserBySessionId(@PathVariable("sessionId") String sessionId) {
