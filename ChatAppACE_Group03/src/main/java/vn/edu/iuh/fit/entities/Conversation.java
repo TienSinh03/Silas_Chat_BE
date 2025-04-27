@@ -60,4 +60,6 @@ public class Conversation {
     public Set<ObjectId> getMemberId() {
         return memberId;
     }
+
+    private String linkGroup;
 }
