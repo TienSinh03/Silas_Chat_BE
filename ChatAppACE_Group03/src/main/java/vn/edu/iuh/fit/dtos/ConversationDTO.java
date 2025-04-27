@@ -84,4 +84,7 @@ public class ConversationDTO {
     @JsonDeserialize(using = ObjectIdSetDeserializer.class)
     private Set<ObjectId> removedByUserIds = new HashSet<>();
 
+
+    private String linkGroup;
+
 }

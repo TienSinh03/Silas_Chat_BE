@@ -33,6 +33,7 @@ import vn.edu.iuh.fit.services.UserService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /*
  * @description:
@@ -72,10 +73,35 @@ public class ConversationController {
         return ResponseEntity.ok(conversationService.findAllConversationsByUserId(user.getId()));
     }
 
+//    @PostMapping("/createConversationGroup")
+//    public ResponseEntity<ConversationDTO> createConversationGroup(@RequestHeader("Authorization") String token, @RequestBody ConversationDTO conversationDTO) {
+//        try {
+//            UserResponse user = userService.getCurrentUser(token);
+//
+//            ConversationDTO conversation = conversationService.createConversationGroup(user.getId(), conversationDTO);
+//
+//            for (ObjectId memberId : conversation.getMemberId()) {
+//                System.out.println("memberId: " + memberId);
+//                simpMessagingTemplate.convertAndSend("/chat/create/group/" + memberId, conversation);
+//            }
+//            return ResponseEntity.ok(conversation);
+//        } catch (Exception e) {
+//            System.out.println("Error creating group conversation: " + e.getMessage());
+//            return ResponseEntity.badRequest().build();
+//        }
+//    }
+
     @PostMapping("/createConversationGroup")
-    public ResponseEntity<ConversationDTO> createConversationGroup(@RequestHeader("Authorization") String token, @RequestBody ConversationDTO conversationDTO) {
+    public ResponseEntity<ConversationDTO> createConversationGroup(
+            @RequestHeader("Authorization") String token,
+            @RequestBody ConversationDTO conversationDTO) {
         try {
             UserResponse user = userService.getCurrentUser(token);
+
+            // Nếu chưa có linkGroup thì tự tạo
+            if (conversationDTO.getLinkGroup() == null || conversationDTO.getLinkGroup().isEmpty()) {
+                conversationDTO.setLinkGroup(generateRandomLinkGroup());
+            }
 
             ConversationDTO conversation = conversationService.createConversationGroup(user.getId(), conversationDTO);
 
@@ -88,6 +114,19 @@ public class ConversationController {
             System.out.println("Error creating group conversation: " + e.getMessage());
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    // Gộp luôn hàm random bên dưới
+    private String generateRandomLinkGroup() {
+        String characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder randomString = new StringBuilder();
+        Random random = new Random();
+
+        for (int i = 0; i < 10; i++) {
+            randomString.append(characters.charAt(random.nextInt(characters.length())));
+        }
+
+        return "iuhgroup3" + randomString.toString();
     }
 
     @PostMapping("/find-or-create")
