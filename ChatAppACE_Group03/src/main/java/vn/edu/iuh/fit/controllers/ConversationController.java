@@ -126,7 +126,7 @@ public class ConversationController {
             randomString.append(characters.charAt(random.nextInt(characters.length())));
         }
 
-        return "iuhgroup3" + randomString.toString();
+        return "iuhgroup3_" + randomString.toString();
     }
 
     @PostMapping("/find-or-create")
@@ -460,6 +460,35 @@ public class ConversationController {
 
 
 
+    //findLinkGroupByConversationId
+    @GetMapping("/linkGroup/{conversationId}")
+    public ResponseEntity<?> findLinkGroupByConversationId(@PathVariable ObjectId conversationId) {
+        try {
+            String linkGroup = conversationService.findLinkGroupByConversationId(conversationId);
+            return ResponseEntity.ok(Map.of("linkGroup", linkGroup));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi tìm kiếm link nhóm: " + e.getMessage()));
+        }
+    }
+    // localhost:8080/api/v1/conversations/linkGroup/68075bc43ec6ed45491a7c05f
+
+    @GetMapping("/conversationId/{linkGroup}")
+    public ResponseEntity<?> findConversationIdByLinkGroup(@PathVariable String linkGroup) {
+        try {
+            ConversationDTO conversation = conversationService.findConversationIdByLinkGroup(linkGroup);
+            if (conversation != null) {
+                return ResponseEntity.ok(conversation);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("success", false, "message", "Không tìm thấy cuộc trò chuyện với link nhóm này"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi tìm kiếm cuộc trò chuyện: " + e.getMessage()));
+        }
+
+    }
 
 
 }

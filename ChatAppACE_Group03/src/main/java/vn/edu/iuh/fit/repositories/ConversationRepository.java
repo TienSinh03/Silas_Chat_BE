@@ -24,10 +24,10 @@ import java.util.Set;
  */
 @Repository
 public interface ConversationRepository extends MongoRepository<Conversation, ObjectId> {
-    @Query("{ 'is_group': :#{#isGroup}, 'memberId': { $in: ?0 } }")
+    @Query("{ 'is_group': #{#isGroup}, 'memberId': { $in: ?0 } }")
     List<Conversation> findOneToOneConversationByMemberIds(Set<ObjectId> memberIds, boolean isGroup);
 
-    @Query("{ 'is_group': :#{#isGroup}, 'memberId': { $all: ?0, $size: 2 } }")
+    @Query("{ 'is_group': #{#isGroup}, 'memberId': { $all: ?0, $size: 2 } }")
     Conversation findOneToOneConversationByTwoMemberIds(Set<ObjectId> memberIds, boolean isGroup);
 
     @Query("{'name': {$regex: ?0, $options: 'i'}, 'isGroup': ?1}")
@@ -36,4 +36,9 @@ public interface ConversationRepository extends MongoRepository<Conversation, Ob
     List<Conversation> findByIsGroup(boolean isGroup);
     @Query(value = "{'name': {$regex: ?0, $options: 'i'}, 'isGroup': ?1}", exists = true)
     boolean existsByNameAndIsGroup(String name, boolean isGroup);
+
+    // tìm idconversation theo link group
+    // tìm idconversation theo link group
+    @Query("{'linkGroup': ?0}")
+    Optional<Conversation> findByLinkGroup(String linkGroup);
 }

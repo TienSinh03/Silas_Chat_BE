@@ -983,4 +983,38 @@ public class ConversationServiceImpl implements ConversationService {
 
     }
 
+    // tìm linkgroup theo conversationId
+
+    @Override
+    public String findLinkGroupByConversationId(ObjectId conversationId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy cuộc trò chuyện với ID: " + conversationId));
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if (!conversation.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+        return conversation.getLinkGroup();
+    }
+
+
+    // tìm conversationId theo linkGroup
+
+    @Override
+    public ConversationDTO findConversationIdByLinkGroup(String linkGroup) {
+        Conversation conversation = conversationRepository.findByLinkGroup(linkGroup)
+                .orElseThrow(() -> new ConversationCreationException("Không tìm thấy cuộc trò chuyện với linkGroup: " + linkGroup));
+
+        // Kiểm tra xem cuộc trò chuyện có phải là nhóm không
+        if (!conversation.isGroup()) {
+            throw new ConversationCreationException("Cuộc trò chuyện không phải là nhóm");
+        }
+
+        return mapToDTO(conversation);
+    }
+
+
+
+
 }

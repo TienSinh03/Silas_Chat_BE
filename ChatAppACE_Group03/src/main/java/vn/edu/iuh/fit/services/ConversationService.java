@@ -54,4 +54,10 @@ public interface ConversationService {
 
     // UPDATE TÊN NHÓM
     ConversationDTO updateGroupName(ObjectId conversationId, String newGroupName);
+
+    //  tìm linkGroup theo ConversationId
+    String findLinkGroupByConversationId(ObjectId conversationId);
+
+    //tim conversationId theo linkGroup
+    ConversationDTO findConversationIdByLinkGroup(String linkGroup);
 }
