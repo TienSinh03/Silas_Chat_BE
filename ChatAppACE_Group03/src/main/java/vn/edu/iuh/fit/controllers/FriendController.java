@@ -10,6 +10,9 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.dtos.request.FriendRequestReq;
 import vn.edu.iuh.fit.dtos.response.*;
@@ -35,6 +38,9 @@ public class FriendController {
     private FriendRequestService friendRequestService;
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SimpMessagingTemplate simpMessagingTemplate;
 
     @GetMapping("/friend-requests/received")
     public ResponseEntity<ApiResponse<?>> getFriendsRequest(@RequestHeader("Authorization") String token) {
@@ -70,10 +76,28 @@ public class FriendController {
         }
     }
 
+    /**
+     * api send friend request
+     * @param token
+     * @param friendRequestReq
+     * @return
+     */
     @PostMapping("/send-request")
     public ResponseEntity<ApiResponse<?>> sendFriendRequest(@RequestHeader("Authorization") String token, @RequestBody FriendRequestReq friendRequestReq) {
         try {
             FriendRequestDto response = friendRequestService.sendFriendRequest(token,friendRequestReq);
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Request Friend Successfully").response(response).build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
+        }
+    }
+
+    @MessageMapping("/friend/send-request")
+    public ResponseEntity<ApiResponse<?>> sendFriendRequest_Socket(@Header("Authorization") String token, FriendRequestReq friendRequestReq) {
+        try {
+            FriendRequestDto response = friendRequestService.sendFriendRequest(token,friendRequestReq);
+            simpMessagingTemplate.convertAndSend("/friend/notification/" + response.getReceiver(), response);
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Request Friend Successfully").response(response).build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
