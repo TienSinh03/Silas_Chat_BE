@@ -40,7 +40,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     // cau hinh de xu ly viec gui/nhan message tu client va server
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/chat", "/user");
+        config.enableSimpleBroker("/chat", "/user","/friend");
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
 
