@@ -174,7 +174,7 @@ public class ConversationServiceImpl implements ConversationService {
                 return existingDTO;
             }
         }
-
+        
         // Chưa có, tiến hành tạo mới
         Conversation conversation = mapToEntity(conversationDTO);
         conversation.setGroup(false);
