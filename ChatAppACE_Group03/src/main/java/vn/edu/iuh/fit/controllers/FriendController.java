@@ -16,6 +16,12 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.dtos.request.FriendRequestReq;
 import vn.edu.iuh.fit.dtos.response.*;
+import vn.edu.iuh.fit.entities.Friend;
+import vn.edu.iuh.fit.entities.FriendRequest;
+import vn.edu.iuh.fit.entities.User;
+import vn.edu.iuh.fit.repositories.FriendRepository;
+import vn.edu.iuh.fit.repositories.FriendRequestRepository;
+import vn.edu.iuh.fit.repositories.UserRepository;
 import vn.edu.iuh.fit.services.FriendRequestService;
 import vn.edu.iuh.fit.services.FriendService;
 import vn.edu.iuh.fit.services.UserService;
@@ -41,6 +47,12 @@ public class FriendController {
 
     @Autowired
     private SimpMessagingTemplate simpMessagingTemplate;
+    @Autowired
+    private FriendRepository friendRepository;
+    @Autowired
+    private FriendRequestRepository friendRequestRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping("/friend-requests/received")
     public ResponseEntity<ApiResponse<?>> getFriendsRequest(@RequestHeader("Authorization") String token) {
@@ -111,12 +123,30 @@ public class FriendController {
         try {
             System.out.println("Token: " + token);
             System.out.println("Request ID: " + requestId);
-            boolean isAccepted = friendRequestService.acceptFriendRequest(token, requestId);
-            if(!isAccepted) {
+            Friend isAccepted = friendRequestService.acceptFriendRequest(token, requestId);
+            if(isAccepted == null) {
+
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ApiResponse.builder().status("FAILED").message("Failed to accept friend request").build());
             }
-            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Accept Friend Request Successfully").response("").build());
+           User friendRequest = userRepository.findById(isAccepted.getFriendId())
+                    .orElseThrow(() -> new RuntimeException("Friend not found"));
+            User user = userRepository.findById(isAccepted.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            FriendResponse friendReceived = new FriendResponse();
+            friendReceived.setUserId(user.getId());
+            friendReceived.setDisplayName(user.getDisplayName());
+            friendReceived.setAvatar(user.getAvatar());
+
+            FriendResponse friendSent= new FriendResponse();
+            friendSent.setUserId(friendRequest.getId());
+            friendSent.setDisplayName(friendRequest.getDisplayName());
+            friendSent.setAvatar(friendRequest.getAvatar());
+
+            simpMessagingTemplate.convertAndSend("/friend/accept/" + friendRequest.getId(), friendReceived);
+            simpMessagingTemplate.convertAndSend("/friend/accept/" + user.getId(), friendSent);
+
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Accept Friend Request Successfully").build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
