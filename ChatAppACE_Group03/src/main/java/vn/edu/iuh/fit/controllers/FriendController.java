@@ -98,7 +98,6 @@ public class FriendController {
     public ResponseEntity<ApiResponse<?>> sendFriendRequest(@RequestHeader("Authorization") String token, @RequestBody FriendRequestReq friendRequestReq) {
         try {
             FriendRequestDto response = friendRequestService.sendFriendRequest(token,friendRequestReq);
-            simpMessagingTemplate.convertAndSend("/friend/notification/" + response.getReceiver(), response);
 
             User userReceiver = userRepository.findById(response.getSender())
                     .orElseThrow(() -> new RuntimeException("User not found"));
@@ -120,7 +119,16 @@ public class FriendController {
     public ResponseEntity<ApiResponse<?>> sendFriendRequest_Socket(@Header("Authorization") String token, FriendRequestReq friendRequestReq) {
         try {
             FriendRequestDto response = friendRequestService.sendFriendRequest(token,friendRequestReq);
-            simpMessagingTemplate.convertAndSend("/friend/notification/" + response.getReceiver(), response);
+
+            User userReceiver = userRepository.findById(response.getSender())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            FriendRequestResponse friendReceived = new FriendRequestResponse();
+            friendReceived.setUserId(userReceiver.getId());
+            friendReceived.setDisplayName(userReceiver.getDisplayName());
+            friendReceived.setAvatar(userReceiver.getAvatar());
+            friendReceived.setRequestId(response.getId());
+
+            simpMessagingTemplate.convertAndSend("/friend/request/" + response.getReceiver(), friendReceived);
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Request Friend Successfully").response(response).build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
