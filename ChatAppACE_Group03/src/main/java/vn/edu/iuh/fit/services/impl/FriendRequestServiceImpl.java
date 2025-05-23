@@ -155,7 +155,7 @@ public class FriendRequestServiceImpl implements FriendRequestService
                 .createdAt(Instant.now())
                 .build();
 
-        friend = friendRepository.save(friend);
+            friend = friendRepository.save(friend);
         // Lưu vào cơ sở dữ liệu
         return friend;
     }
