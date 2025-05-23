@@ -214,11 +214,30 @@ public class FriendController {
         try {
             System.out.println("Token: " + token);
             System.out.println("Friend ID: " + friendId);
-            boolean isUnfriend = friendService.unfriend(token, friendId);
-            if(!isUnfriend) {
+            Friend isUnfriend = friendService.unfriend(token, friendId);
+            if(isUnfriend == null) {
                 return ResponseEntity.status((HttpStatus.BAD_REQUEST))
                         .body(ApiResponse.builder().status("FAILED").message("Failed to unfriend").build());
             }
+
+            User friend = userRepository.findById(isUnfriend.getFriendId())
+                    .orElseThrow(() -> new RuntimeException("Friend not found"));
+            User user = userRepository.findById(isUnfriend.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            FriendResponse inf_User = new FriendResponse();
+            inf_User.setUserId(user.getId());
+            inf_User.setDisplayName(user.getDisplayName());
+            inf_User.setAvatar(user.getAvatar());
+
+            FriendResponse inf_Friend = new FriendResponse();
+            inf_Friend.setUserId(friend.getId());
+            inf_Friend.setDisplayName(friend.getDisplayName());
+            inf_Friend.setAvatar(friend.getAvatar());
+
+            simpMessagingTemplate.convertAndSend("/friend/unfriend/" + friend.getId(), inf_User);
+            simpMessagingTemplate.convertAndSend("/friend/unfriend/" + user.getId(), inf_Friend);
+
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Unfriend Successfully").response("").build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

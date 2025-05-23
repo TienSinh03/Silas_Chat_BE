@@ -121,7 +121,7 @@ public class FriendServiceImpl implements FriendService {
      * @return
      */
     @Override
-    public boolean unfriend(String token,ObjectId friendId) {
+    public Friend unfriend(String token,ObjectId friendId) {
         UserResponse user = userService.getCurrentUser(token);
         if (user == null) {
             throw new UserNotFoundException("User not found");
@@ -138,9 +138,9 @@ public class FriendServiceImpl implements FriendService {
 
            // Huy ket ban
             friendRepository.delete(friend.get());
-            return true;
+            return friend.get();
         }
 
-        return false;
+        return null;
     }
 }
