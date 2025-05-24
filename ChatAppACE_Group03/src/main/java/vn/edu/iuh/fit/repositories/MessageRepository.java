@@ -31,4 +31,7 @@ public interface MessageRepository extends MongoRepository<Message, ObjectId> {
     List<Message> findByIdIn(Set<ObjectId> ids);
 
     void deleteAllByConversationId(ObjectId conversationId);
+
+    @Query("{ 'conversationId': ?0, 'pinned': true }")
+    List<Message> findPinnedMessagesByConversationId(ObjectId conversationId);
 }

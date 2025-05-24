@@ -21,6 +21,9 @@ import vn.edu.iuh.fit.dtos.request.ChatMessageRequest;
 import vn.edu.iuh.fit.dtos.request.FileRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
 import vn.edu.iuh.fit.entities.Message;
+import vn.edu.iuh.fit.entities.PollOption;
+import vn.edu.iuh.fit.enums.MessageType;
+import vn.edu.iuh.fit.repositories.MessageRepository;
 import vn.edu.iuh.fit.services.CloudinaryService;
 import vn.edu.iuh.fit.services.ConversationService;
 import vn.edu.iuh.fit.services.ImageService;
@@ -50,6 +53,9 @@ public class MessageController {
 
     @Autowired
     private final ConversationService conversationService;
+
+    @Autowired
+    private MessageRepository messageRepository;
 
     @PostMapping
     @MessageMapping("/chat/send")
@@ -333,6 +339,74 @@ public class MessageController {
                     .status("SUCCESS")
                     .message("Message unpinned successfully")
                     .response(unpinnedMessage)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("FAILED")
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
+
+    @GetMapping("/pinned/{conversationId}")
+    public ResponseEntity<ApiResponse<?>> getPinnedMessages(@PathVariable String conversationId) {
+        try {
+            if (!ObjectId.isValid(conversationId)) {
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("Invalid conversation ID format")
+                        .build());
+            }
+            List<MessageDTO> pinnedMessages = messageService.getPinnedMessages(new ObjectId(conversationId));
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Fetch pinned messages successfully")
+                    .response(pinnedMessages)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("FAILED")
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
+
+    @PostMapping("/vote")
+    @MessageMapping("/chat/vote")
+    public ResponseEntity<ApiResponse<?>> voteOnPoll(@RequestBody Map<String, String> request) {
+        try {
+            ObjectId messageId = new ObjectId(request.get("messageId"));
+            ObjectId userId = new ObjectId(request.get("userId"));
+            int optionIndex = Integer.parseInt(request.get("optionIndex"));
+
+            Message message = messageService.getMessageById(messageId);
+            if (message == null || message.getMessageType() != MessageType.POLL) {
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("Message not found or not a poll")
+                        .build());
+            }
+
+            List<PollOption> pollOptions = message.getPollOptions();
+            if (optionIndex < 0 || optionIndex >= pollOptions.size()) {
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("Invalid option index")
+                        .build());
+            }
+
+            // Remove user's vote from other options
+            pollOptions.forEach(option -> option.getVoters().remove(userId));
+            // Add vote to the selected option
+            pollOptions.get(optionIndex).getVoters().add(userId);
+
+            Message updatedMessage = messageRepository.save(message);
+            messagingTemplate.convertAndSend("/chat/message/single/" + updatedMessage.getConversationId(), updatedMessage);
+
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Voted successfully")
+                    .response(updatedMessage)
                     .build());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.builder()

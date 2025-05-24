@@ -20,7 +20,8 @@ public enum MessageType {
     STICKER("STICKER"),
     GIF("GIF"),
     EMOJI("EMOJI"),
-    SYSTEM("SYSTEM"),;
+    SYSTEM("SYSTEM"),
+    POLL("POLL"),;
 
     private String type;
 

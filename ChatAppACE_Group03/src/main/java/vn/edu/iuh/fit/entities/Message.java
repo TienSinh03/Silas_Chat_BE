@@ -75,5 +75,7 @@ public class Message {
 
     private boolean pinned;
 
+    private List<PollOption> pollOptions;
+
 }
 
