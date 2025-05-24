@@ -12,7 +12,7 @@ COPY gradle ./gradle
 COPY src ./src
 
 # Build the application
-RUN ./gradlew build -x test
+RUN chmod +x gradlew && ./gradlew build -x test
 
 # Use an official OpenJDK runtime as a parent image for the final image
 FROM openjdk:17-jdk-slim
