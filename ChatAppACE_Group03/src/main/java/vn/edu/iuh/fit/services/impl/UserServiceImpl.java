@@ -169,5 +169,12 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public UserResponse getUserById(ObjectId userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng với ID: " + userId));
+        return convertToDto(user);
+    }
+
 
 }

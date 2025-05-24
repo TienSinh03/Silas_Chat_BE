@@ -51,4 +51,13 @@ public class PostController {
         }
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllPosts() {
+        try {
+            return ResponseEntity.ok(postService.findAll());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error retrieving posts: " + e.getMessage());
+        }
+    }
+
 }

@@ -9,6 +9,7 @@ package vn.edu.iuh.fit.services;
 import org.bson.types.ObjectId;
 import vn.edu.iuh.fit.dtos.response.FriendResponse;
 import vn.edu.iuh.fit.entities.Friend;
+import vn.edu.iuh.fit.entities.User;
 
 import java.util.List;
 
@@ -21,4 +22,5 @@ public interface FriendService {
     List<FriendResponse> getFriends(ObjectId userId);
     public Friend unfriend(String token, ObjectId friendId);
     public boolean isFriend(ObjectId userId, ObjectId friendId);
+
 }

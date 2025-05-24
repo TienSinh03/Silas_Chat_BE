@@ -262,4 +262,24 @@ public class FriendController {
                     .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
         }
     }
+
+    /*
+     Lấy danh sách bạn be của người dùng
+     */
+    @GetMapping("/my-friends/{id}")
+    public ResponseEntity<ApiResponse<?>> getMyFriends(@PathVariable("id") ObjectId id) {
+        try {
+            List<FriendResponse> friends = friendService.getFriends(id);
+            if(friends.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(ApiResponse.builder().status("SUCCESS").message("Get list Friend is empty").build());
+            }
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Get list Friend successfully").response(friends).build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.builder().status("FAILED").message(e.getMessage()).build());
+        }
+    }
+
+
 }
