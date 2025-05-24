@@ -490,5 +490,16 @@ public class ConversationController {
 
     }
 
-
+    @GetMapping("/getAllGroupConversationsByUserId")
+    public ResponseEntity<?> getAllGroupConversationsByUserId(@RequestHeader("Authorization") String token) {
+        try {
+            UserResponse user = userService.getCurrentUser(token);
+            List<ConversationDTO> groupConversations = conversationService.findAllGroupConversationsByUserId(user.getId());
+            return ResponseEntity.ok(groupConversations);
+        } catch (Exception e) {
+            System.out.println("Error fetching group conversations: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi lấy danh sách nhóm: " + e.getMessage()));
+        }
+    }
 }
