@@ -9,6 +9,7 @@ package vn.edu.iuh.fit.services.impl;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import vn.edu.iuh.fit.dtos.response.PostReponse;
 import vn.edu.iuh.fit.entities.Post;
 import vn.edu.iuh.fit.repositories.PostRepository;
 import vn.edu.iuh.fit.services.PostService;
@@ -44,6 +45,14 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<Post> findByUserId(ObjectId userId) {
         return postRepository.findByUserId(userId);
+    }
+
+    @Override
+    public List<Post> findAll() {
+        // Lấy tất cả bài viết
+        // Nếu cần phân trang, có thể sử dụng Pageable
+
+        return postRepository.findAll();
     }
 
 

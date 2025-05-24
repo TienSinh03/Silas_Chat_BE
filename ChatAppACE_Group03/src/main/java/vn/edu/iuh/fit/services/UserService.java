@@ -34,4 +34,6 @@ public interface UserService {
 
     public List<UserResponse> searchByKeyWord(String keyWord);
     List<UserResponse> getUsersByIds(Set<ObjectId> userIds);
+
+    UserResponse getUserById(ObjectId userId);
 }

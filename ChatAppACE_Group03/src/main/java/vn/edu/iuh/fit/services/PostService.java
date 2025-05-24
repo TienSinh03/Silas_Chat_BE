@@ -22,4 +22,6 @@ public interface PostService {
     // Lấy tất cả bài viết của một người dùng
     List<Post> findByUserId(ObjectId userId);
 
+    List<Post> findAll();
+
 }

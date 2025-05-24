@@ -26,4 +26,5 @@ public interface MemberService {
     boolean existsByConversationIdAndUserId(ObjectId conversationId, ObjectId userId);
     List<Member> findByConversationId(ObjectId conversationId);
     MemberRoles getUserRoleInConversation(ObjectId userId, ObjectId conversationId);
+
 }
