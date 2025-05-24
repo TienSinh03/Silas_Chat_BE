@@ -36,7 +36,6 @@ public interface ConversationService {
     ConversationDTO findOrCreateConversation(ObjectId senderId, String receiverId);
     ConversationDTO findConversationByMembers(ObjectId senderId, ObjectId receiverId);
 
-
     void addPinnedMessage(ObjectId conversationId, ObjectId messageId);
     void removePinnedMessage(ObjectId conversationId, ObjectId messageId);
     boolean isMember(ObjectId conversationId, ObjectId userId);
@@ -60,4 +59,7 @@ public interface ConversationService {
 
     //tim conversationId theo linkGroup
     ConversationDTO findConversationIdByLinkGroup(String linkGroup);
+
+    // Find all group conversations for a user
+    List<ConversationDTO> findAllGroupConversationsByUserId(ObjectId userId);
 }

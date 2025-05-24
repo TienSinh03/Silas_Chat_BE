@@ -41,4 +41,6 @@ public interface ConversationRepository extends MongoRepository<Conversation, Ob
     // tìm idconversation theo link group
     @Query("{'linkGroup': ?0}")
     Optional<Conversation> findByLinkGroup(String linkGroup);
+
+    List<Conversation> findByIdInAndIsGroupTrue(List<ObjectId> ids);
 }
