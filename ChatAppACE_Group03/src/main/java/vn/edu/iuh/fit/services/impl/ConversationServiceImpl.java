@@ -1014,7 +1014,62 @@ public class ConversationServiceImpl implements ConversationService {
         return mapToDTO(conversation);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<ConversationDTO> findAllGroupConversationsByUserId(ObjectId userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId không được null");
+        }
 
+        // Find all members where userId is a member
+        List<Member> members = memberRepository.findByUserId(userId);
+        if (members.isEmpty()) {
+            log.debug("No group conversations found for userId: {}", userId);
+            return Collections.emptyList();
+        }
+
+        // Get conversation IDs where the user is a member
+        List<ObjectId> conversationIds = members.stream()
+                .map(Member::getConversationId)
+                .collect(Collectors.toList());
+
+        // Find all group conversations
+        List<Conversation> groupConversations = conversationRepository.findByIdInAndIsGroupTrue(conversationIds);
+        if (groupConversations.isEmpty()) {
+            log.debug("No group conversations found for userId: {}", userId);
+            return Collections.emptyList();
+        }
+
+        // Map to ConversationDTO
+        return groupConversations.stream().map(conversation -> {
+            ConversationDTO dto = mapToDTO(conversation);
+
+            // Populate members and roles
+            List<Member> allMembers = memberRepository.findByConversationId(conversation.getId());
+            Map<ObjectId, MemberRoles> roleMap = allMembers.stream()
+                    .collect(Collectors.toMap(Member::getUserId, Member::getRole));
+            Set<ObjectId> memberIds = roleMap.keySet();
+            dto.setMemberId(memberIds);
+
+            // Fetch user details
+            List<UserResponse> userResponses = userService.getUsersByIds(memberIds);
+            List<MemberResponse> memberResponses = userResponses.stream()
+                    .map(user -> toMemberResponse(user, roleMap.get(user.getId())))
+                    .collect(Collectors.toList());
+            dto.setMembers(memberResponses);
+
+            // Populate lastMessage if available
+            if (conversation.getLastMessageId() != null) {
+                Optional<Message> lastMessageOpt = messageRepository.findById(conversation.getLastMessageId());
+                lastMessageOpt.ifPresent(message -> {
+                    MessageDTO messageDTO = modelMapper.map(message, MessageDTO.class);
+                    dto.setLastMessage(messageDTO);
+                });
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+    }
 
 
 }
