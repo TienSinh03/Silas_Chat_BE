@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import vn.edu.iuh.fit.dtos.MessageDTO;
 import vn.edu.iuh.fit.dtos.request.ChatMessageRequest;
 import vn.edu.iuh.fit.entities.Message;
+import vn.edu.iuh.fit.entities.PollOption;
 import vn.edu.iuh.fit.enums.MessageType;
 import vn.edu.iuh.fit.repositories.MessageRepository;
 import vn.edu.iuh.fit.services.MessageService;
@@ -15,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -112,6 +114,20 @@ public class MessageServiceImpl implements MessageService {
             case EMOJI:
                 message.setContent(request.getContent());
                 message.setFileUrl(request.getFileUrl());
+                break;
+            case POLL:
+                message.setContent(request.getContent()); // The poll question
+                message.setPollOptions(request.getPollOptions() != null
+                        ? request.getPollOptions().stream()
+                        .map(opt -> PollOption.builder()
+                                .optionText(opt)
+                                .voters(new ArrayList<>())
+                                .build())
+                        .collect(Collectors.toList())
+                        : null);
+                if (message.getPollOptions() == null || message.getPollOptions().size() < 2) {
+                    throw new IllegalArgumentException("Poll must have at least 2 options");
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported message type: " + messageType);
@@ -280,6 +296,15 @@ public class MessageServiceImpl implements MessageService {
         conversationService.removePinnedMessage(conversationId, messageId);
 
         return message;
+    }
+
+    @Override
+    public List<MessageDTO> getPinnedMessages(ObjectId conversationId) {
+        if (conversationId == null) {
+            throw new IllegalArgumentException("Conversation ID cannot be null.");
+        }
+        List<Message> pinnedMessages = messageRepository.findPinnedMessagesByConversationId(conversationId);
+        return pinnedMessages.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
 }

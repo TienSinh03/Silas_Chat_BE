@@ -18,4 +18,6 @@ public interface MessageService {
 
     Message pinMessage(ObjectId messageId, ObjectId userId, ObjectId conversationId);
     Message unpinMessage(ObjectId messageId, ObjectId userId, ObjectId conversationId);
+
+    List<MessageDTO> getPinnedMessages(ObjectId conversationId);
 }
