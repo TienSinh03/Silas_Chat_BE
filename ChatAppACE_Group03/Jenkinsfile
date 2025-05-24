@@ -12,9 +12,11 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t vinh14124374/app-chat-backend .'
-                }
+				dir('ChatAppACE_Group03') {
+					script {
+						sh 'docker build -t vinh14124374/app-chat-backend .'
+					}
+				}
             }
         }
         stage('Push to Docker Hub') {
