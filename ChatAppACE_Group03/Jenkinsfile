@@ -13,7 +13,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build(DOCKER_IMAGE, , "-f ChatAppACE_Group03/Dockerfile .")
+                    sh 'docker build -t vinh14124374/chat-app-backend:9 -f ChatAppACE_Group03/Dockerfile ./ChatAppACE_Group03'
                 }
             }
         }
