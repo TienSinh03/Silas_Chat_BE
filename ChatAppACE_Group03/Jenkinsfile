@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = "vinh14124374/chat-app-backend:${BUILD_NUMBER}"
+        DOCKER_IMAGE = "vinh14124374/app-chat-backend:${BUILD_NUMBER}"
         DOCKER_CRED = credentials('dockerhub')
     }
     stages {
@@ -13,7 +13,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t vinh14124374/chat-app-backend:9 -f ChatAppACE_Group03/Dockerfile ./ChatAppACE_Group03'
+                    sh 'docker build -t vinh14124374/app-chat-backend .'
                 }
             }
         }
