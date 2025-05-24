@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: app-chat-backend
+    image: vinh14124374/app-chat-backend:latest
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    restart: always
