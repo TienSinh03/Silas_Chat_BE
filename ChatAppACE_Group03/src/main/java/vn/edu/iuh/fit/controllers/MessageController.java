@@ -20,9 +20,15 @@ import vn.edu.iuh.fit.dtos.MessageDTO;
 import vn.edu.iuh.fit.dtos.request.ChatMessageRequest;
 import vn.edu.iuh.fit.dtos.request.FileRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
+import vn.edu.iuh.fit.entities.Conversation;
+import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
 import vn.edu.iuh.fit.entities.PollOption;
+import vn.edu.iuh.fit.enums.MemberRoles;
 import vn.edu.iuh.fit.enums.MessageType;
+import vn.edu.iuh.fit.exceptions.ConversationCreationException;
+import vn.edu.iuh.fit.repositories.ConversationRepository;
+import vn.edu.iuh.fit.repositories.MemberRepository;
 import vn.edu.iuh.fit.repositories.MessageRepository;
 import vn.edu.iuh.fit.services.CloudinaryService;
 import vn.edu.iuh.fit.services.ConversationService;
@@ -56,14 +62,35 @@ public class MessageController {
 
     @Autowired
     private MessageRepository messageRepository;
+    @Autowired
+    private ConversationRepository conversationRepository;
+
+    @Autowired
+    private final MemberRepository memberRepository;
 
     @PostMapping
     @MessageMapping("/chat/send")
     public ResponseEntity<ApiResponse<?>> sendMessage(@RequestBody ChatMessageRequest request) {
         try {
             System.out.println("Request: " + request);
-            MessageDTO message = messageService.sendMessage(request);
 
+            // Kiểm tra nếu là nhóm và có giới hạn nhắn tin
+            Conversation conversation = conversationRepository.findById(new ObjectId(request.getConversationId()))
+                    .orElseThrow(() -> new ConversationCreationException("Không tìm thấy cuộc trò chuyện"));
+            if (conversation.isGroup() && conversation.isRestrictMessagingToAdmin()) {
+                Member member = memberRepository.findByConversationIdAndUserId(
+                        new ObjectId(request.getConversationId()),
+                        new ObjectId(request.getSenderId())
+                ).orElseThrow(() -> new ConversationCreationException("Người dùng không phải là thành viên của cuộc trò chuyện"));
+                if (member.getRole() != MemberRoles.ADMIN) {
+                    return ResponseEntity.badRequest().body(ApiResponse.builder()
+                            .status("FAILED")
+                            .message("Chỉ admin mới có thể nhắn tin trong nhóm này")
+                            .build());
+                }
+            }
+
+            MessageDTO message = messageService.sendMessage(request);
             messagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
@@ -413,6 +440,27 @@ public class MessageController {
                     .status("FAILED")
                     .message(e.getMessage())
                     .build());
+        }
+    }
+
+    @PostMapping("/{messageId}/vote")
+    public ResponseEntity<?> voteInPoll(
+            @PathVariable String messageId,
+            @RequestParam int optionIndex,
+            @RequestHeader("Authorization") String token,
+            @RequestParam String userId) {
+        try {
+            Message updatedMessage = messageService.voteInPoll(new ObjectId(messageId), new ObjectId(userId), optionIndex);
+            return ResponseEntity.ok(Map.of(
+                    "status", "SUCCESS",
+                    "message", "Vote recorded successfully",
+                    "updatedMessageId", updatedMessage.getId().toString()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of(
+                    "status", "ERROR",
+                    "message", e.getMessage()
+            ));
         }
     }
 }
