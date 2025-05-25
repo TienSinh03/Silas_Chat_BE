@@ -36,6 +36,7 @@ import vn.edu.iuh.fit.services.ImageService;
 import vn.edu.iuh.fit.services.MessageService;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -195,49 +196,41 @@ public class MessageController {
     @PostMapping(value = "/upload-img", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> uploadImage(
             @RequestPart("request") String reqJson,
-            @RequestPart(value = "anh", required = false) MultipartFile anh) {
+            @RequestPart(value = "anh", required = false) List<MultipartFile> anh) {
         ObjectMapper objectMapper = new ObjectMapper();
         ChatMessageRequest chatMessageRequest;
 
         try {
             chatMessageRequest = objectMapper.readValue(reqJson, ChatMessageRequest.class);
 
-            String fileUrl = null;
-            FileRequest fileRequest = null;
+            List<String> fileUrls = new ArrayList<>();
+            List<FileRequest> fileRequests = new ArrayList<>();
 
             if (anh != null && !anh.isEmpty()) {
-                if (chatMessageRequest.getMessageType().equals("VIDEO")) {
-                    fileUrl = cloudinaryService.uploadVideo(anh);
-                } else if (chatMessageRequest.getMessageType().equals("IMAGE")) {
-                    fileUrl = cloudinaryService.uploadImage(anh);
-                } else {
-                    fileUrl = cloudinaryService.uploadFile(anh);
+                for (MultipartFile file : anh) {
+                    String fileUrl = null;
+                    if (chatMessageRequest.getMessageType().equals("VIDEO")) {
+                        fileUrl = cloudinaryService.uploadVideo(file);
+                    } else if (chatMessageRequest.getMessageType().equals("IMAGE")) {
+                        fileUrl = cloudinaryService.uploadImage(file);
+                    } else {
+                        fileUrl = cloudinaryService.uploadFile(file);
+                    }
+                    fileUrls.add(fileUrl);
+                    FileRequest fileRequest = FileRequest.builder()
+                            .fileName(file.getOriginalFilename())
+                            .fileType(file.getContentType())
+                            .fileUrl(fileUrl)
+                            .uploadedAt(Instant.now())
+                            .build();
+                    imageService.saveImage(fileRequest);
                 }
-                chatMessageRequest.setFileUrl(fileUrl);
-
-                fileRequest = FileRequest.builder()
-                        .fileName(anh.getOriginalFilename())
-                        .fileType(anh.getContentType())
-                        .fileUrl(fileUrl)
-                        .uploadedAt(Instant.now())
-                        .build();
-
-                imageService.saveImage(fileRequest);
             }
-
-            if (chatMessageRequest.getSenderId() == null || chatMessageRequest.getConversationId() == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.builder()
-                                .status("FAILED")
-                                .message("Thiếu senderId hoặc conversationId")
-                                .build());
-            }
-
-            // Trả về URL file và chatMessageRequest cho client
+            // Trả về danh sách URL file và chatMessageRequest cho client
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
                     .message("Upload thành công")
-                    .response(Map.of("fileUrl", fileUrl != null ? fileUrl : "", "chatMessageRequest", chatMessageRequest))
+                    .response(Map.of("fileUrls", fileUrls, "chatMessageRequest", chatMessageRequest))
                     .build());
 
         } catch (Exception e) {
