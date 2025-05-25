@@ -22,8 +22,10 @@ import vn.edu.iuh.fit.entities.Conversation;
 import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
 import vn.edu.iuh.fit.entities.User;
+import vn.edu.iuh.fit.enums.MemberRoles;
 import vn.edu.iuh.fit.enums.MessageType;
 import vn.edu.iuh.fit.exceptions.ConversationCreationException;
+import vn.edu.iuh.fit.repositories.ConversationRepository;
 import vn.edu.iuh.fit.repositories.MemberRepository;
 import vn.edu.iuh.fit.repositories.MessageRepository;
 import vn.edu.iuh.fit.repositories.UserRepository;
@@ -56,6 +58,9 @@ public class ConversationController {
     private UserRepository userRepository;
     @Autowired
     private MessageRepository messageRepository;
+
+    @Autowired
+    private ConversationRepository conversationRepository;
 
     @GetMapping("/{id}")
     public ResponseEntity<ConversationDTO> getConversationById(@PathVariable ObjectId id) {
@@ -500,6 +505,67 @@ public class ConversationController {
             System.out.println("Error fetching group conversations: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi lấy danh sách nhóm: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/restrict-messaging")
+    @MessageMapping("/conversation/restrict-messaging")
+    public ResponseEntity<ApiResponse<?>> restrictMessaging(@RequestBody Map<String, String> request, @RequestHeader("Authorization") String token) {
+        try {
+            UserResponse user = userService.getCurrentUser(token);
+            ObjectId conversationId = new ObjectId(request.get("conversationId"));
+            boolean restrict = Boolean.parseBoolean(request.get("restrict"));
+
+            // Kiểm tra xem người dùng có phải là admin không
+            Member member = memberRepository.findByConversationIdAndUserId(conversationId, user.getId())
+                    .orElseThrow(() -> new ConversationCreationException("Người dùng không phải là thành viên của cuộc trò chuyện"));
+            if (member.getRole() != MemberRoles.ADMIN) {
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("Chỉ admin mới có thể thay đổi cài đặt nhắn tin")
+                        .build());
+            }
+
+            // Cập nhật cài đặt giới hạn nhắn tin
+            Conversation conversation = conversationRepository.findById(conversationId)
+                    .orElseThrow(() -> new ConversationCreationException("Không tìm thấy cuộc trò chuyện"));
+            if (!conversation.isGroup()) {
+                return ResponseEntity.badRequest().body(ApiResponse.builder()
+                        .status("FAILED")
+                        .message("Chỉ có thể áp dụng cho nhóm")
+                        .build());
+            }
+
+            conversation.setRestrictMessagingToAdmin(restrict);
+            conversationRepository.save(conversation);
+
+            // Gửi thông báo hệ thống
+            Message systemMessage = Message.builder()
+                    .conversationId(conversationId)
+                    .messageType(MessageType.SYSTEM)
+                    .content(restrict ? "Chỉ admin được phép nhắn tin trong nhóm" : "Tất cả thành viên được phép nhắn tin trong nhóm")
+                    .timestamp(Instant.now())
+                    .recalled(false)
+                    .build();
+            messageRepository.save(systemMessage);
+
+            // Gửi thông báo qua WebSocket
+            ConversationDTO updatedConversation = conversationService.findConversationById(conversationId);
+            for (ObjectId memberId : updatedConversation.getMemberId()) {
+                simpMessagingTemplate.convertAndSend("/chat/create/group/" + memberId, updatedConversation);
+                simpMessagingTemplate.convertAndSend("/chat/message/single/" + conversationId, systemMessage);
+            }
+
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Cập nhật cài đặt nhắn tin thành công")
+                    .response(updatedConversation)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("FAILED")
+                    .message(e.getMessage())
+                    .build());
         }
     }
 }

@@ -20,4 +20,7 @@ public interface MessageService {
     Message unpinMessage(ObjectId messageId, ObjectId userId, ObjectId conversationId);
 
     List<MessageDTO> getPinnedMessages(ObjectId conversationId);
+
+    // Add voting method
+    Message voteInPoll(ObjectId messageId, ObjectId userId, int optionIndex);
 }

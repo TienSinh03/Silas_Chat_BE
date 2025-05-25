@@ -74,6 +74,8 @@ public class ConversationServiceImpl implements ConversationService {
                 .dissolvedBy(conversation.getDissolvedBy())
                 .dissolvedAt(conversation.getDissolvedAt())
                 .removedByUserIds(conversation.getRemovedByUserIds())
+                .linkGroup(conversation.getLinkGroup())
+                .restrictMessagingToAdmin(conversation.isRestrictMessagingToAdmin())
                 .build();
 
 
