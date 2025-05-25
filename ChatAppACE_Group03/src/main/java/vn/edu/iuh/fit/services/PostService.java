@@ -7,6 +7,7 @@
 package vn.edu.iuh.fit.services;
 
 import org.bson.types.ObjectId;
+import vn.edu.iuh.fit.dtos.PostUserDTO;
 import vn.edu.iuh.fit.entities.Post;
 
 import java.util.List;
@@ -23,5 +24,8 @@ public interface PostService {
     List<Post> findByUserId(ObjectId userId);
 
     List<Post> findAll();
+
+    List<PostUserDTO> findUsersWithPosts();
+
 
 }

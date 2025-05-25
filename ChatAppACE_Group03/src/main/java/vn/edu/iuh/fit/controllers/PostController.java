@@ -60,4 +60,13 @@ public class PostController {
         }
     }
 
+    @GetMapping("/users-with-posts")
+    public ResponseEntity<?> getUsersWithPosts() {
+        try {
+            return ResponseEntity.ok(postService.findUsersWithPosts());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error retrieving users with posts: " + e.getMessage());
+        }
+    }
+
 }
