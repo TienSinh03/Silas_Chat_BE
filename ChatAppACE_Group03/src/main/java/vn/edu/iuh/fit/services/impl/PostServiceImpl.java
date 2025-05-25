@@ -103,7 +103,6 @@ public class PostServiceImpl implements PostService {
                     post.setUpdatedAt(doc.getDate("updatedAt") != null ? doc.getDate("updatedAt").toInstant() : null);
                     post.setPublic(doc.getBoolean("isPublic", false));
                     post.setLikeCount(doc.getInteger("likeCount", 0));
-                    post.setComment(doc.getString("comment"));
                     post.setFonts(doc.getInteger("fonts", 0));
 
                     if (!userMap.containsKey(userId)) {
