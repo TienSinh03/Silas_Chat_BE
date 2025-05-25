@@ -8,6 +8,7 @@ package vn.edu.iuh.fit.repositories;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import vn.edu.iuh.fit.entities.Post;
 
@@ -23,4 +24,8 @@ public interface PostRepository extends MongoRepository<Post, ObjectId> {
 
     // Tìm tất cả bài viết của một người dùng
     List<Post> findByUserId(ObjectId userId);
+
+    // lấy câu query lấy ra thông tin user và bài viết của họ
+
+
 }
