@@ -10,8 +10,11 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.edu.iuh.fit.dtos.PostUserDTO;
 import vn.edu.iuh.fit.entities.Post;
 import vn.edu.iuh.fit.services.PostService;
+
+import java.util.List;
 
 /*
  * @description:
@@ -63,10 +66,40 @@ public class PostController {
     @GetMapping("/users-with-posts")
     public ResponseEntity<?> getUsersWithPosts() {
         try {
-            return ResponseEntity.ok(postService.findUsersWithPosts());
+            List<PostUserDTO> postUserDTOS = postService.findUsersWithPosts();
+            System.out.println("PostUserDTOs: " + postUserDTOS);
+            return ResponseEntity.ok(postUserDTOS);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error retrieving users with posts: " + e.getMessage());
         }
     }
+
+    @DeleteMapping("/{postId}")
+    public ResponseEntity<?> deletePostById(@PathVariable String postId) {
+        try {
+            ObjectId objectId = new ObjectId(postId);
+            postService.deletePostById(objectId);
+            return ResponseEntity.ok("Post deleted successfully");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid postId format");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error deleting post: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/update/{idPost}")
+    public ResponseEntity<?> updatePost(@PathVariable String idPost, @RequestBody Post post) {
+        try {
+            ObjectId objectId = new ObjectId(idPost);
+            post.setId(objectId); // Set the ID for the post to update
+            Post updatedPost = postService.updatePost(post);
+            return ResponseEntity.ok(updatedPost);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid postId format");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating post: " + e.getMessage());
+        }
+    }
+
 
 }

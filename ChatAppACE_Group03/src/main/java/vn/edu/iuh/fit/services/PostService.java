@@ -27,5 +27,11 @@ public interface PostService {
 
     List<PostUserDTO> findUsersWithPosts();
 
+    //xóa
+    void deletePostById(ObjectId postId);
+
+    // update
+    Post updatePost(Post post);
+
 
 }
