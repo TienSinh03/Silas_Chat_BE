@@ -307,5 +307,42 @@ public class MessageServiceImpl implements MessageService {
         return pinnedMessages.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    @Override
+    public Message voteInPoll(ObjectId messageId, ObjectId userId, int optionIndex) {
+        // Validate inputs
+        if (messageId == null || userId == null) {
+            throw new IllegalArgumentException("Message ID and User ID cannot be null");
+        }
+
+        // Retrieve the message
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+
+        // Verify it's a poll message
+        if (message.getMessageType() != MessageType.POLL) {
+            throw new IllegalArgumentException("Message is not a poll");
+        }
+
+        // Validate option index
+        List<PollOption> pollOptions = message.getPollOptions();
+        if (pollOptions == null || optionIndex < 0 || optionIndex >= pollOptions.size()) {
+            throw new IllegalArgumentException("Invalid poll option index");
+        }
+
+        // Get the selected option
+        PollOption selectedOption = pollOptions.get(optionIndex);
+
+        // Check if the user has already voted
+        if (selectedOption.getVoters().contains(userId)) {
+            throw new IllegalArgumentException("User has already voted for this option");
+        }
+
+        // Add user to voters list
+        selectedOption.getVoters().add(userId);
+
+        // Save the updated message
+        return messageRepository.save(message);
+    }
+
 }
 

@@ -62,4 +62,8 @@ public class Conversation {
     }
 
     private String linkGroup;
+
+    private boolean restrictMessagingToAdmin = false;
+
+
 }
