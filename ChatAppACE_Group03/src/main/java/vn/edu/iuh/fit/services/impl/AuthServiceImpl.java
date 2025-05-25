@@ -77,6 +77,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private User createUser(SignUpRequest signUpRequest) {
+        String rawPassword = signUpRequest.getPassword();
+        if (!rawPassword.matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$")) {
+            throw new IllegalArgumentException("Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái và số.");
+        }
         List<String> assignedRoles = determineRoles(signUpRequest.getRoles());
         System.out.println("Assigned roles: " + assignedRoles);
         return User.builder()

@@ -20,9 +20,15 @@ import vn.edu.iuh.fit.dtos.MessageDTO;
 import vn.edu.iuh.fit.dtos.request.ChatMessageRequest;
 import vn.edu.iuh.fit.dtos.request.FileRequest;
 import vn.edu.iuh.fit.dtos.response.ApiResponse;
+import vn.edu.iuh.fit.entities.Conversation;
+import vn.edu.iuh.fit.entities.Member;
 import vn.edu.iuh.fit.entities.Message;
 import vn.edu.iuh.fit.entities.PollOption;
+import vn.edu.iuh.fit.enums.MemberRoles;
 import vn.edu.iuh.fit.enums.MessageType;
+import vn.edu.iuh.fit.exceptions.ConversationCreationException;
+import vn.edu.iuh.fit.repositories.ConversationRepository;
+import vn.edu.iuh.fit.repositories.MemberRepository;
 import vn.edu.iuh.fit.repositories.MessageRepository;
 import vn.edu.iuh.fit.services.CloudinaryService;
 import vn.edu.iuh.fit.services.ConversationService;
@@ -30,6 +36,7 @@ import vn.edu.iuh.fit.services.ImageService;
 import vn.edu.iuh.fit.services.MessageService;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -56,14 +63,35 @@ public class MessageController {
 
     @Autowired
     private MessageRepository messageRepository;
+    @Autowired
+    private ConversationRepository conversationRepository;
+
+    @Autowired
+    private final MemberRepository memberRepository;
 
     @PostMapping
     @MessageMapping("/chat/send")
     public ResponseEntity<ApiResponse<?>> sendMessage(@RequestBody ChatMessageRequest request) {
         try {
             System.out.println("Request: " + request);
-            MessageDTO message = messageService.sendMessage(request);
 
+            // Kiểm tra nếu là nhóm và có giới hạn nhắn tin
+            Conversation conversation = conversationRepository.findById(new ObjectId(request.getConversationId()))
+                    .orElseThrow(() -> new ConversationCreationException("Không tìm thấy cuộc trò chuyện"));
+            if (conversation.isGroup() && conversation.isRestrictMessagingToAdmin()) {
+                Member member = memberRepository.findByConversationIdAndUserId(
+                        new ObjectId(request.getConversationId()),
+                        new ObjectId(request.getSenderId())
+                ).orElseThrow(() -> new ConversationCreationException("Người dùng không phải là thành viên của cuộc trò chuyện"));
+                if (member.getRole() != MemberRoles.ADMIN) {
+                    return ResponseEntity.badRequest().body(ApiResponse.builder()
+                            .status("FAILED")
+                            .message("Chỉ admin mới có thể nhắn tin trong nhóm này")
+                            .build());
+                }
+            }
+
+            MessageDTO message = messageService.sendMessage(request);
             messagingTemplate.convertAndSend("/chat/message/single/" + message.getConversationId(), message);
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
@@ -168,49 +196,41 @@ public class MessageController {
     @PostMapping(value = "/upload-img", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<?>> uploadImage(
             @RequestPart("request") String reqJson,
-            @RequestPart(value = "anh", required = false) MultipartFile anh) {
+            @RequestPart(value = "anh", required = false) List<MultipartFile> anh) {
         ObjectMapper objectMapper = new ObjectMapper();
         ChatMessageRequest chatMessageRequest;
 
         try {
             chatMessageRequest = objectMapper.readValue(reqJson, ChatMessageRequest.class);
 
-            String fileUrl = null;
-            FileRequest fileRequest = null;
+            List<String> fileUrls = new ArrayList<>();
+            List<FileRequest> fileRequests = new ArrayList<>();
 
             if (anh != null && !anh.isEmpty()) {
-                if (chatMessageRequest.getMessageType().equals("VIDEO")) {
-                    fileUrl = cloudinaryService.uploadVideo(anh);
-                } else if (chatMessageRequest.getMessageType().equals("IMAGE")) {
-                    fileUrl = cloudinaryService.uploadImage(anh);
-                } else {
-                    fileUrl = cloudinaryService.uploadFile(anh);
+                for (MultipartFile file : anh) {
+                    String fileUrl = null;
+                    if (chatMessageRequest.getMessageType().equals("VIDEO")) {
+                        fileUrl = cloudinaryService.uploadVideo(file);
+                    } else if (chatMessageRequest.getMessageType().equals("IMAGE")) {
+                        fileUrl = cloudinaryService.uploadImage(file);
+                    } else {
+                        fileUrl = cloudinaryService.uploadFile(file);
+                    }
+                    fileUrls.add(fileUrl);
+                    FileRequest fileRequest = FileRequest.builder()
+                            .fileName(file.getOriginalFilename())
+                            .fileType(file.getContentType())
+                            .fileUrl(fileUrl)
+                            .uploadedAt(Instant.now())
+                            .build();
+                    imageService.saveImage(fileRequest);
                 }
-                chatMessageRequest.setFileUrl(fileUrl);
-
-                fileRequest = FileRequest.builder()
-                        .fileName(anh.getOriginalFilename())
-                        .fileType(anh.getContentType())
-                        .fileUrl(fileUrl)
-                        .uploadedAt(Instant.now())
-                        .build();
-
-                imageService.saveImage(fileRequest);
             }
-
-            if (chatMessageRequest.getSenderId() == null || chatMessageRequest.getConversationId() == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.builder()
-                                .status("FAILED")
-                                .message("Thiếu senderId hoặc conversationId")
-                                .build());
-            }
-
-            // Trả về URL file và chatMessageRequest cho client
+            // Trả về danh sách URL file và chatMessageRequest cho client
             return ResponseEntity.ok(ApiResponse.builder()
                     .status("SUCCESS")
                     .message("Upload thành công")
-                    .response(Map.of("fileUrl", fileUrl != null ? fileUrl : "", "chatMessageRequest", chatMessageRequest))
+                    .response(Map.of("fileUrls", fileUrls, "chatMessageRequest", chatMessageRequest))
                     .build());
 
         } catch (Exception e) {
@@ -413,6 +433,27 @@ public class MessageController {
                     .status("FAILED")
                     .message(e.getMessage())
                     .build());
+        }
+    }
+
+    @PostMapping("/{messageId}/vote")
+    public ResponseEntity<?> voteInPoll(
+            @PathVariable String messageId,
+            @RequestParam int optionIndex,
+            @RequestHeader("Authorization") String token,
+            @RequestParam String userId) {
+        try {
+            Message updatedMessage = messageService.voteInPoll(new ObjectId(messageId), new ObjectId(userId), optionIndex);
+            return ResponseEntity.ok(Map.of(
+                    "status", "SUCCESS",
+                    "message", "Vote recorded successfully",
+                    "updatedMessageId", updatedMessage.getId().toString()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of(
+                    "status", "ERROR",
+                    "message", e.getMessage()
+            ));
         }
     }
 }

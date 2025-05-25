@@ -87,4 +87,6 @@ public class ConversationDTO {
 
     private String linkGroup;
 
+    private boolean restrictMessagingToAdmin;
+
 }
