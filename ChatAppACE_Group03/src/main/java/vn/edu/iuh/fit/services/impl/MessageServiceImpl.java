@@ -24,6 +24,7 @@ public class MessageServiceImpl implements MessageService {
 
     private final MessageRepository messageRepository;
     private final ConversationServiceImpl conversationService;
+    private final UserServiceImpl userService;
 
     // Phương thức kiểm tra ObjectId hợp lệ
     private boolean isValidObjectId(String str) {
@@ -31,6 +32,9 @@ public class MessageServiceImpl implements MessageService {
     }
 
     private MessageDTO convertToDTO(Message message) {
+        String senderName = userService.getUserByIds(message.getSenderId())
+                .map(user -> user.getDisplayName())
+                .orElse("Unknown User"); // Lấy tên người gửi từ dịch vụ người dùng
         return MessageDTO.builder()
                 .id(message.getId())
                 .senderId(message.getSenderId())
@@ -44,6 +48,7 @@ public class MessageServiceImpl implements MessageService {
                 .replyToMessageId(message.getReplyToMessageId())
                 .reactions(message.getReactions())
                 .deletedBy(message.getDeletedBy())
+                .senderName(senderName) // Gán tên người gửi
                 .build();
     }
 
@@ -342,6 +347,32 @@ public class MessageServiceImpl implements MessageService {
 
         // Save the updated message
         return messageRepository.save(message);
+    }
+
+    @Override
+    public List<MessageDTO> searchMessages(ObjectId conversationId, String keyword) {
+        if (conversationId == null) {
+            throw new IllegalArgumentException("Conversation ID cannot be null");
+        }
+
+        List<Message> messages = messageRepository.findByConversationIdOrderByTimestampAsc(conversationId);
+        System.out.println("Total messages found: " + messages.size());
+        if (keyword != null) {
+            System.out.println("Searching for keyword: " + keyword);
+        }
+
+        List<Message> filteredMessages = messages.stream()
+                .filter(message ->
+                        keyword == null || keyword.isEmpty() ||
+                                (message.getContent() != null && message.getContent().toLowerCase().contains(keyword.toLowerCase()))
+                )
+                .collect(Collectors.toList());
+
+        System.out.println("Filtered messages count: " + filteredMessages.size());
+
+        return filteredMessages.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
 }

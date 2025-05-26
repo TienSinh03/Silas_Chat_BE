@@ -456,4 +456,24 @@ public class MessageController {
             ));
         }
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<?>> searchMessages(
+            @RequestParam String conversationId,
+            @RequestParam(required = false) String keyword) {
+        try {
+            ObjectId conversationObjId = new ObjectId(conversationId);
+            List<MessageDTO> messages = messageService.searchMessages(conversationObjId, keyword);
+            return ResponseEntity.ok(ApiResponse.builder()
+                    .status("SUCCESS")
+                    .message("Search messages successfully")
+                    .response(messages)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                    .status("FAILED")
+                    .message(e.getMessage())
+                    .build());
+        }
+    }
 }

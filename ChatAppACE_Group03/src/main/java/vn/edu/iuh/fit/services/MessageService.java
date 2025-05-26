@@ -23,4 +23,6 @@ public interface MessageService {
 
     // Add voting method
     Message voteInPoll(ObjectId messageId, ObjectId userId, int optionIndex);
+
+    List<MessageDTO> searchMessages(ObjectId conversationId, String keyword);
 }

@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /*
  * @description:
@@ -48,4 +49,5 @@ public class UserResponse implements Serializable {
     private LocalDate dob;
     private boolean enabled;
     List<String> roles;
+
 }
