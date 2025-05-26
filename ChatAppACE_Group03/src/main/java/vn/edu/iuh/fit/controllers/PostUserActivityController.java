@@ -53,7 +53,20 @@ public class PostUserActivityController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error retrieving post user activities: " + e.getMessage());
         }
-
      }
+
+    // lấy danh sách hoạt động của người dùng theo postId
+    @GetMapping("/post/comment/{postId}")
+    public ResponseEntity<?> getActivitiesByPostIdAndActivityType(@PathVariable ObjectId postId) {
+        if (postId == null) {
+            return ResponseEntity.badRequest().body("Post ID cannot be null");
+        }
+
+        try {
+            return ResponseEntity.ok(postUserActivityService.findByPostIdAndActivityType(postId));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error retrieving post user activities: " + e.getMessage());
+        }
+    }
 
 }

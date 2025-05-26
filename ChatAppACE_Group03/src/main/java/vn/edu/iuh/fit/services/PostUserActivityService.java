@@ -22,4 +22,7 @@ public interface PostUserActivityService {
 
     // lấy tat ca theo post id
      List<PostUserActivity> findByPostId(ObjectId postId);
+
+     // lấy danh sach h theo post id
+        List<PostUserActivity> findByPostIdAndActivityType(ObjectId postId);
 }
