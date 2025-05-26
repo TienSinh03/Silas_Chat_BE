@@ -33,5 +33,7 @@ public interface PostService {
     // update
     Post updatePost(Post post);
 
+    // xóa bài viết sẽ xóa luôn bình luận liên quan
+
 
 }
