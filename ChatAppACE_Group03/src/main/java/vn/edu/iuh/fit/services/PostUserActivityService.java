@@ -24,5 +24,18 @@ public interface PostUserActivityService {
      List<PostUserActivity> findByPostId(ObjectId postId);
 
      // lấy danh sach h theo post id
-        List<PostUserActivity> findByPostIdAndActivityType(ObjectId postId);
+     List<PostUserActivity> findByPostIdAndActivityType(ObjectId postId);
+
+     // lay tong so luot comment theo post id
+     long countCommentsByPostId(ObjectId postId);
+
+     // update tym, khi biết idpost và id người dùng
+     PostUserActivity updateLikeStatus(ObjectId postId, ObjectId userId);
+
+
+     // lay trang thai bai viet theo userId, idpost
+        PostUserActivity findByPostIdAndUserId(ObjectId postId, ObjectId userId);
+
+
+
 }

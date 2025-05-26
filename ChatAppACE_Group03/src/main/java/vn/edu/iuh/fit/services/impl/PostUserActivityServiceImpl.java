@@ -70,4 +70,55 @@ public class PostUserActivityServiceImpl implements PostUserActivityService {
 
     }
 
+    @Override
+    public long countCommentsByPostId(ObjectId postId) {
+        // Sử dụng MongoTemplate để đếm số lượng bình luận theo postId
+        return mongoTemplate.count(
+                new org.springframework.data.mongodb.core.query.Query(
+                        org.springframework.data.mongodb.core.query.Criteria.where("postId").is(postId)
+                                .and("comment").exists(true)
+                ),
+                PostUserActivity.class
+        );
+    }
+
+    @Override
+    public PostUserActivity updateLikeStatus(ObjectId postId, ObjectId userId) {
+        // if nếu tym đã tồn tại thì bỏ tym, nếu chưa có thì update
+        PostUserActivity activity = mongoTemplate.findOne(
+                new org.springframework.data.mongodb.core.query.Query(
+                        org.springframework.data.mongodb.core.query.Criteria.where("postId").is(postId)
+                                .and("userIdActor").is(userId)
+                ),
+                PostUserActivity.class
+        );
+        if (activity != null) {
+            // Nếu đã có hoạt động, cập nhật trạng thái tym
+            activity.setTym(!activity.isTym());
+            return postUserActivityRepository.save(activity);
+        } else {
+            // Nếu chưa có hoạt động, tạo mới
+            PostUserActivity newActivity = PostUserActivity.builder()
+                    .postId(postId)
+                    .userIdActor(userId)
+                    .tym(true) // Mặc định là thích
+                    .activityTime(java.time.LocalDateTime.now())
+                    .build();
+            return postUserActivityRepository.save(newActivity);
+        }
+    }
+
+    @Override
+    public PostUserActivity findByPostIdAndUserId(ObjectId postId, ObjectId userId) {
+        // Sử dụng MongoTemplate để tìm hoạt động theo postId và userId
+        return mongoTemplate.findOne(
+                new org.springframework.data.mongodb.core.query.Query(
+                        org.springframework.data.mongodb.core.query.Criteria.where("postId").is(postId)
+                                .and("userIdActor").is(userId)
+                ),
+                PostUserActivity.class
+        );
+    }
+
+
 }
