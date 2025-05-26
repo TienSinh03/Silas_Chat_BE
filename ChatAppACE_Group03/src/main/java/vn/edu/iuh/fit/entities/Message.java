@@ -77,5 +77,6 @@ public class Message {
 
     private List<PollOption> pollOptions;
 
+    private String senderName;
 }
 

@@ -24,6 +24,7 @@ import vn.edu.iuh.fit.utils.JwtTokenUtil;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -174,6 +175,11 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Không tìm thấy người dùng với ID: " + userId));
         return convertToDto(user);
+    }
+
+    @Override
+    public Optional<User> getUserByIds(ObjectId userId) {
+        return userRepository.findById(userId);
     }
 
 

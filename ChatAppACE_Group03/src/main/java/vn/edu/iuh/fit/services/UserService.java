@@ -12,6 +12,7 @@ import vn.edu.iuh.fit.dtos.response.UserResponse;
 import vn.edu.iuh.fit.entities.User;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /*
@@ -36,4 +37,6 @@ public interface UserService {
     List<UserResponse> getUsersByIds(Set<ObjectId> userIds);
 
     UserResponse getUserById(ObjectId userId);
+
+    Optional<User> getUserByIds(ObjectId userId);
 }
