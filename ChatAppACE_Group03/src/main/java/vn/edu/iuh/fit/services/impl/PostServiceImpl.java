@@ -79,15 +79,15 @@ public class PostServiceImpl implements PostService {
         );
         System.out.println("aggregationResults: " + aggregationResults.getMappedResults());
         List<Document> documents = aggregationResults.getMappedResults();
-        System.out.println("documents: " + documents);
+//        System.out.println("documents: " + documents);
         Map<ObjectId, PostUserDTO> userMap = new HashMap<>();
-        System.out.println("userMap1: " + userMap);
+//        System.out.println("userMap1: " + userMap);
         for (Document doc : documents) {
             try {
                 ObjectId userId = doc.getObjectId("userId"); // Có thể bị null ở đây
-                System.out.println(userId);
+//                System.out.println(userId);
                 User user = mongoTemplate.findById(userId, User.class);
-                System.out.println("user: " + user);
+//                System.out.println("user: " + user);
                 if (user != null) {
                     // nếu isPublic là false thì khong show
                     if (doc.getBoolean("isPublic", true) == false) {
@@ -109,14 +109,14 @@ public class PostServiceImpl implements PostService {
                         userMap.put(userId, new PostUserDTO(user, new ArrayList<>()));
                     }
                     userMap.get(userId).getPosts().add(post);
-                    System.out.println("userMap2: " + userMap);
+//                    System.out.println("userMap2: " + userMap);
                 }
             } catch (Exception e) {
-                System.err.println("Error processing document: " + doc);
-                e.printStackTrace(); // log lỗi chi tiết
+//                System.err.println("Error processing document: " + doc);
+//                e.printStackTrace(); // log lỗi chi tiết
             }
         }
-        System.out.println("userMap3: " + userMap);
+//        System.out.println("userMap3: " + userMap);
         result.addAll(userMap.values());
         return result;
     }

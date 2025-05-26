@@ -37,6 +37,11 @@ public class PostUserActivityServiceImpl implements PostUserActivityService {
         if (postUserActivity.getActivityTime() == null) {
             postUserActivity.setActivityTime(java.time.LocalDateTime.now());
         }
+        // comment khng null
+        if (postUserActivity.getComment() == null) {
+            postUserActivity.setComment("ok");
+        }
+
 
         // Lưu vào MongoDB qua repository
         return postUserActivityRepository.save(postUserActivity);
@@ -51,6 +56,18 @@ public class PostUserActivityServiceImpl implements PostUserActivityService {
                 ),
                 PostUserActivity.class
         );
+    }
+
+    @Override
+    public List<PostUserActivity> findByPostIdAndActivityType(ObjectId postId) {
+        // Sử dụng MongoTemplate để tìm tất cả hoạt động của người dùng theo postId và activityType
+        return mongoTemplate.find(
+                new org.springframework.data.mongodb.core.query.Query(
+                        org.springframework.data.mongodb.core.query.Criteria.where("postId").is(postId)
+                ),
+                PostUserActivity.class
+        );
+
     }
 
 }
