@@ -201,7 +201,7 @@ public class MessageServiceImpl implements MessageService {
 
             if (message.getMessageType() == MessageType.GIF || message.getMessageType() == MessageType.STICKER ||
                     message.getMessageType() == MessageType.EMOJI || message.getMessageType() == MessageType.IMAGE ||
-                    message.getMessageType() == MessageType.FILE) {
+                    message.getMessageType() == MessageType.FILE || message.getMessageType() == MessageType.VIDEO) {
                 message.setFileUrl(null); // Xóa URL nếu là GIF hoặc STICKER
                 message.setMessageType(MessageType.TEXT); // Đặt lại loại tin nhắn thành TEXT
             }
