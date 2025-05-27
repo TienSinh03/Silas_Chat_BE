@@ -89,6 +89,7 @@ public class PostUserActivityController {
     // cập nhật trạng thái like
     @PutMapping("/post/{postId}/user/{userId}/tym")
     public ResponseEntity<?> updateLikeStatus(@PathVariable ObjectId postId, @PathVariable ObjectId userId) {
+
         if ( userId == null) {
             return ResponseEntity.badRequest().body("Post ID and User ID cannot be null");
         }
@@ -114,6 +115,36 @@ public class PostUserActivityController {
             return ResponseEntity.ok(Collections.singletonMap("liked", liked));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error retrieving post liked status: " + e.getMessage());
+        }
+    }
+
+    // xóa bình luận theo id activity
+    @DeleteMapping("/activity/{activityId}")
+    public ResponseEntity<?> deleteActivityById(@PathVariable ObjectId activityId) {
+        if (activityId == null) {
+            return ResponseEntity.badRequest().body("Activity ID cannot be null");
+        }
+
+        try {
+            postUserActivityService.deleteById(activityId);
+            return ResponseEntity.ok("Activity deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error deleting activity: " + e.getMessage());
+        }
+    }
+
+    // cập nhật bình luận theo id activity
+    @PutMapping("/activity/{activityId}/comment/{comment}")
+    public ResponseEntity<?> updateCommentById(@PathVariable ObjectId activityId, @PathVariable String comment) {
+        if (activityId == null || comment == null || comment.isEmpty()) {
+            return ResponseEntity.badRequest().body("Activity ID and comment cannot be null or empty");
+        }
+
+        try {
+            PostUserActivity updatedActivity = postUserActivityService.updateCommentById(activityId, comment);
+            return ResponseEntity.ok(updatedActivity);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating comment: " + e.getMessage());
         }
     }
 
