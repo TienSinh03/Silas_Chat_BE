@@ -37,5 +37,12 @@ public interface PostUserActivityService {
         PostUserActivity findByPostIdAndUserId(ObjectId postId, ObjectId userId);
 
 
+        // xóa bình luận theo id activity
+    void deleteById(ObjectId activityId);
+
+    // update bình luận theo id activity
+    PostUserActivity updateCommentById(ObjectId activityId, String comment);
+
+
 
 }

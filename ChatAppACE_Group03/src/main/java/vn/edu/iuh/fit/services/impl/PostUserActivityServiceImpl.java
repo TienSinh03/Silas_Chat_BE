@@ -120,5 +120,24 @@ public class PostUserActivityServiceImpl implements PostUserActivityService {
         );
     }
 
+    @Override
+    public void deleteById(ObjectId activityId) {
+        // Xóa hoạt động theo ID
+        postUserActivityRepository.deleteById(activityId);
+
+    }
+
+    @Override
+    public PostUserActivity updateCommentById(ObjectId activityId, String comment) {
+        // Tìm hoạt động theo ID
+        PostUserActivity activity = postUserActivityRepository.findById(activityId).orElse(null);
+        if (activity != null) {
+            // Cập nhật bình luận
+            activity.setComment(comment);
+            return postUserActivityRepository.save(activity);
+        }
+        return null; // Trả về null nếu không tìm thấy hoạt động
+    }
+
 
 }
