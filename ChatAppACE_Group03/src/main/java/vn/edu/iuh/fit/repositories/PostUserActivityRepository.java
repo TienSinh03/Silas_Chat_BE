@@ -20,5 +20,7 @@ import vn.edu.iuh.fit.entities.PostUserActivity;
 @Repository
 public interface PostUserActivityRepository extends MongoRepository<PostUserActivity, ObjectId> {
 
+//    xóa bình luận theo postId
+    void deleteByPostId(ObjectId postId);
 
 }

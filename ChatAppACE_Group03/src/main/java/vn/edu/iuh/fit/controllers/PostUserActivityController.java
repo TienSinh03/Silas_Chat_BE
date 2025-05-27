@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import vn.edu.iuh.fit.entities.PostUserActivity;
 import vn.edu.iuh.fit.services.PostUserActivityService;
 
+import java.util.Collections;
+
 @RestController
 @RequestMapping("/api/v1/postactivity")
 public class PostUserActivityController {
@@ -66,6 +68,52 @@ public class PostUserActivityController {
             return ResponseEntity.ok(postUserActivityService.findByPostIdAndActivityType(postId));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error retrieving post user activities: " + e.getMessage());
+        }
+    }
+
+    // lấy tổng số lượt comment theo postId
+    @GetMapping("/post/comment/count/{postId}")
+    public ResponseEntity<?> countCommentsByPostId(@PathVariable ObjectId postId) {
+        if (postId == null) {
+            return ResponseEntity.badRequest().body("Post ID cannot be null");
+        }
+
+        try {
+            long count = postUserActivityService.countCommentsByPostId(postId);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error counting comments: " + e.getMessage());
+        }
+    }
+
+    // cập nhật trạng thái like
+    @PutMapping("/post/{postId}/user/{userId}/tym")
+    public ResponseEntity<?> updateLikeStatus(@PathVariable ObjectId postId, @PathVariable ObjectId userId) {
+        if ( userId == null) {
+            return ResponseEntity.badRequest().body("Post ID and User ID cannot be null");
+        }
+
+        try {
+            PostUserActivity updatedActivity = postUserActivityService.updateLikeStatus(postId, userId);
+            return ResponseEntity.ok(updatedActivity);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error updating like status: " + e.getMessage());
+        }
+    }
+
+    // lấy trạng thái bài viết theo userId và postId
+    @GetMapping("/post/{postId}/user/{userId}/tym")
+    public ResponseEntity<?> getPostLikedStatus(@PathVariable ObjectId postId, @PathVariable ObjectId userId) {
+        if (userId == null) {
+            return ResponseEntity.badRequest().body("Post ID and User ID cannot be null");
+        }
+
+        try {
+            PostUserActivity activity = postUserActivityService.findByPostIdAndUserId(postId, userId);
+            boolean liked = activity != null && activity.isTym(); // Giả sử isLiked() trả về trạng thái like
+            return ResponseEntity.ok(Collections.singletonMap("liked", liked));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error retrieving post liked status: " + e.getMessage());
         }
     }
 

@@ -17,6 +17,7 @@ import vn.edu.iuh.fit.dtos.PostUserDTO;
 import vn.edu.iuh.fit.entities.Post;
 import vn.edu.iuh.fit.entities.User;
 import vn.edu.iuh.fit.repositories.PostRepository;
+import vn.edu.iuh.fit.repositories.PostUserActivityRepository;
 import vn.edu.iuh.fit.services.PostService;
 
 import java.time.Instant;
@@ -36,6 +37,10 @@ public class PostServiceImpl implements PostService {
 
     @Autowired
     private PostRepository postRepository;
+
+    @Autowired
+    private PostUserActivityRepository postUserActivityRepository;
+
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -124,7 +129,14 @@ public class PostServiceImpl implements PostService {
     @Override
     public void deletePostById(ObjectId postId) {
         // Xóa bài viết theo ID
+        // xoa luon binh luận liên quan nếu có
+
+
         postRepository.deleteById(postId);
+
+        // Xóa các hoạt động liên quan đến bài viết này
+        postUserActivityRepository.deleteByPostId(postId);
+
     }
 
     @Override
