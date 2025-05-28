@@ -114,6 +114,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/dashboard/**").authenticated()
                         .requestMatchers("/api/v1/user/**").authenticated()
                         .requestMatchers("/api/v1/friend/**").authenticated()
+                        .requestMatchers("/api/v1/vote/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
