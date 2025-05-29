@@ -7,7 +7,9 @@
 package vn.edu.iuh.fit.services;
 
 import org.bson.types.ObjectId;
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.dtos.PostUserDTO;
+import vn.edu.iuh.fit.dtos.request.PostRequest;
 import vn.edu.iuh.fit.entities.Post;
 
 import java.util.List;
@@ -18,7 +20,7 @@ import java.util.List;
  * @date: 5/24/2025
  */
 public interface PostService {
-    Post savePost(Post post);
+    public Post savePost(PostRequest post, MultipartFile file);
 
     // Lấy tất cả bài viết của một người dùng
     List<Post> findByUserId(ObjectId userId);

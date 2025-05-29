@@ -6,11 +6,15 @@
 
 package vn.edu.iuh.fit.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.dtos.PostUserDTO;
+import vn.edu.iuh.fit.dtos.request.PostRequest;
 import vn.edu.iuh.fit.entities.Post;
 import vn.edu.iuh.fit.services.PostService;
 
@@ -28,14 +32,25 @@ public class PostController {
     @Autowired
     private PostService postService;
 
-    @PostMapping("/save")
-    public ResponseEntity<?> savePost(@RequestBody Post post) {
-        if (post == null) {
-            return ResponseEntity.badRequest().body("Post cannot be null");
-        }
+    @PostMapping(value = "/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> savePost(@RequestPart("request") String postRequestJson,
+                                      @RequestPart(value = "image", required = false) MultipartFile image) {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        PostRequest postRequest;
+
+//        if (post == null) {
+//            return ResponseEntity.badRequest().body("Post cannot be null");
+//        }
 
         try {
-            Post savedPost = postService.savePost(post);  // gửi nguyên object
+            postRequest = objectMapper.readValue(postRequestJson, PostRequest.class);
+            if (postRequest == null) {
+                return ResponseEntity.badRequest().body("Post cannot be null");
+            }
+            System.out.println("PostRequest: " + postRequest);
+
+            Post savedPost = postService.savePost(postRequest, image);  // gửi nguyên object
             return ResponseEntity.ok(savedPost);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error saving post: " + e.getMessage());
