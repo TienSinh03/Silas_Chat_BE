@@ -64,4 +64,6 @@ public class Vote {
     private boolean isResult;
 
     private boolean isMultipleChoice;
+
+    private boolean isAddOption;
 }

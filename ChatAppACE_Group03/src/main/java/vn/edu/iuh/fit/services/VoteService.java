@@ -22,4 +22,9 @@ public interface VoteService {
     Optional<Vote> getLatestVoteByGroupId(ObjectId groupId);
     Optional<Vote> updateVoteUserIds(ObjectId voteId, String questionContent, ObjectId userId);
 
+    // add question to vote
+    Optional<Vote> addQuestionToVote(ObjectId voteId, String questionContent);
+
+    // lay thong tin vote theo voteId
+    Optional<Vote> getVoteById(ObjectId voteId);
 }
