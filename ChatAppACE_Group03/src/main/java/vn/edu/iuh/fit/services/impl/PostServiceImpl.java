@@ -13,11 +13,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.iuh.fit.dtos.PostUserDTO;
+import vn.edu.iuh.fit.dtos.request.PostRequest;
 import vn.edu.iuh.fit.entities.Post;
 import vn.edu.iuh.fit.entities.User;
 import vn.edu.iuh.fit.repositories.PostRepository;
 import vn.edu.iuh.fit.repositories.PostUserActivityRepository;
+import vn.edu.iuh.fit.services.CloudinaryService;
 import vn.edu.iuh.fit.services.PostService;
 
 import java.time.Instant;
@@ -41,21 +44,41 @@ public class PostServiceImpl implements PostService {
     @Autowired
     private PostUserActivityRepository postUserActivityRepository;
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @Autowired
     private MongoTemplate mongoTemplate;
 
     @Override
-    public Post savePost(Post post) {
+    public Post savePost(PostRequest post, MultipartFile file) {
         // Nếu là post mới chưa có ID => sinh ObjectId mới
-        if (post.getId() == null) {
-            post.setId(new ObjectId());
-            post.setCreatedAt(Instant.now());
+        Post newPost = new Post();
+        if (newPost.getId() == null) {
+            newPost.setId(new ObjectId());
+            newPost.setContent(post.getContent());
+            newPost.setUserId(post.getUserId());
+            newPost.setPublic(post.isPublic());
+            newPost.setLikeCount(0); // Mặc định số lượng like là 0
+            newPost.setFonts(post.getFonts());
+            // Xử lý ảnh nếu có
+            if (file != null && !file.isEmpty()) {
+                try {
+                    String imageUrl = cloudinaryService.uploadImage(file);
+                    newPost.setImageUrl(imageUrl);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error uploading image: " + e.getMessage());
+                }
+            } else {
+                newPost.setImageUrl(null); // Không có ảnh thì để null
+            }
+            newPost.setCreatedAt(Instant.now());
+
         } else {
             post.setUpdatedAt(Instant.now());
         }
 
-        return postRepository.save(post);
+        return postRepository.save(newPost);
     }
 
     @Override
