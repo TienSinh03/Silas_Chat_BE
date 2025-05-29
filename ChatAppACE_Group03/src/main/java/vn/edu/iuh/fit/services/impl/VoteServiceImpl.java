@@ -88,5 +88,34 @@ public class VoteServiceImpl implements VoteService {
         return Optional.of(updatedVote);
     }
 
+    @Override
+    public Optional<Vote> addQuestionToVote(ObjectId voteId, String questionContent) {
+        // kiem tra neu isAddOption = true
+        Optional<Vote> voteOpt = voteReopsitory.findById(voteId);
+        if (voteOpt.isEmpty()) return Optional.empty();
+        Vote vote = voteOpt.get();
+        if (!vote.isAddOption()) {
+            return Optional.empty(); // Khong cho phep them cau hoi neu isAddOption = false
+        }
+        List<Question> questions = vote.getQuestions();
+        if (questions == null) {
+            questions = List.of();
+        }
+        Question newQuestion = new Question();
+        newQuestion.setContent(questionContent);
+        Set<ObjectId> userIds = new HashSet<>();
+        newQuestion.setUserIds(userIds);
+        questions.add(newQuestion);
+        vote.setQuestions(questions);
+        vote.setCreatedAt(Instant.now()); // Cap nhat thoi gian tao moi
+        Vote updatedVote = voteReopsitory.save(vote);
+        return Optional.of(updatedVote);
+    }
+
+    @Override
+    public Optional<Vote> getVoteById(ObjectId voteId) {
+        return voteReopsitory.findById(voteId);
+    }
+
 
 }

@@ -57,5 +57,26 @@ public class VoteController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    // Add question to vote
+    @PostMapping("/add-question")
+    public ResponseEntity<Vote> addQuestionToVote(
+            @RequestParam String voteId,
+            @RequestParam String questionContent
+    ) {
+        Optional<Vote> updatedVoteOpt = voteService.addQuestionToVote(new ObjectId(voteId), questionContent);
+        return updatedVoteOpt
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    // Get vote by ID
+    @GetMapping("/{voteId}")
+    public ResponseEntity<Vote> getVoteById(@PathVariable String voteId) {
+        Optional<Vote> voteOpt = voteService.getVoteById(new ObjectId(voteId));
+        return voteOpt
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 
 }
