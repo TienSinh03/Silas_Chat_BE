@@ -119,7 +119,7 @@ public class FriendRequestServiceImpl implements FriendRequestService
      * @return
      */
     @Override
-    public boolean acceptFriendRequest(String token, ObjectId requestId) {
+    public Friend acceptFriendRequest(String token, ObjectId requestId) {
         UserResponse user = userService.getCurrentUser(token);
         if(user == null) {
             throw new FriendRequestException("Người nhận không tồn tại.");
@@ -142,11 +142,11 @@ public class FriendRequestServiceImpl implements FriendRequestService
             throw new FriendRequestException("Đã là bạn bè.");
         }
 
-        friendRequest.setStatus(RequestFriendStatus.ACCEPTED);
-        friendRequest.setSendAt(Instant.now());
+//        friendRequest.setStatus(RequestFriendStatus.ACCEPTED);
+//        friendRequest.setSendAt(Instant.now());
 
         // Lưu vào cơ sở dữ liệu
-        friendRequestRepository.save(friendRequest);
+        friendRequestRepository.delete(friendRequest);
 
         Friend friend = Friend.builder()
                 .userId(friendRequest.getReceiver())
@@ -155,9 +155,9 @@ public class FriendRequestServiceImpl implements FriendRequestService
                 .createdAt(Instant.now())
                 .build();
 
-        friendRepository.save(friend);
+            friend = friendRepository.save(friend);
         // Lưu vào cơ sở dữ liệu
-        return true;
+        return friend;
     }
 
     /**

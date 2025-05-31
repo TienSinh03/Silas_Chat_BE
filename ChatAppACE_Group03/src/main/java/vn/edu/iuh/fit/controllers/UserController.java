@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -193,6 +194,38 @@ public class UserController {
                 return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Not Found User").response("").build());
             }
             return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Search user success").response(userResponses).build());
+        } catch (Exception e) {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .status("FAILED")
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
+
+
+    @GetMapping("/me/{token}")
+    public ResponseEntity<ApiResponse<?>> getCurrentUserToken(@PathVariable("token") String token) {
+        try {
+            UserResponse response = userService.getCurrentUser(token);
+
+            simpMessagingTemplate.convertAndSend("/user/profile/" + response.getId(), response);
+
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Get current user").response(response).build());
+        } catch (Exception e) {
+            return ResponseEntity.ok(
+                    ApiResponse.builder()
+                            .status("FAILED")
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
+    // ghetusrby id
+    @GetMapping("/{userId}")
+    public ResponseEntity<ApiResponse<?>> getUserById(@PathVariable("userId") ObjectId userId) {
+        try {
+            UserResponse user = userService.getUserById(userId);
+            return ResponseEntity.ok(ApiResponse.builder().status("SUCCESS").message("Get user by ID successfully").response(user).build());
         } catch (Exception e) {
             return ResponseEntity.ok(
                     ApiResponse.builder()

@@ -76,6 +76,9 @@ public class SecurityConfig {
             "/api/v1/auth/reset-password-mobile",
             "/api/v1/user/check-phone",
             "/ws/**",
+            "/api/v1/qacode/**",
+            "/api/v1/qacode",
+            "/api/v1/user/me/**",
 
     };
 
@@ -111,6 +114,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/dashboard/**").authenticated()
                         .requestMatchers("/api/v1/user/**").authenticated()
                         .requestMatchers("/api/v1/friend/**").authenticated()
+                        .requestMatchers("/api/v1/vote/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)

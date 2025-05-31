@@ -5,6 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor @AllArgsConstructor
 @SuperBuilder
@@ -18,6 +20,7 @@ public class ChatMessageRequest {
     private String replyToMessageId;
     private boolean isSeen;
     private boolean recalled;
+    private List<String> pollOptions;
 
 }
 

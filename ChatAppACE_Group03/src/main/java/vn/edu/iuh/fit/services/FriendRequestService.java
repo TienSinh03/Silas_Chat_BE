@@ -11,6 +11,7 @@ import vn.edu.iuh.fit.dtos.request.FriendRequestReq;
 import vn.edu.iuh.fit.dtos.response.FriendRequestDto;
 import vn.edu.iuh.fit.dtos.response.FriendRequestResponse;
 import vn.edu.iuh.fit.dtos.response.FriendResponse;
+import vn.edu.iuh.fit.entities.Friend;
 
 import java.util.List;
 
@@ -21,7 +22,7 @@ import java.util.List;
  */
 public interface FriendRequestService {
     public FriendRequestDto sendFriendRequest(String token,FriendRequestReq friendRequestReq);
-    public boolean acceptFriendRequest(String token, ObjectId requestId);
+    public Friend acceptFriendRequest(String token, ObjectId requestId);
     public boolean rejectFriendRequest(String token, ObjectId requestId);
 
     List<FriendRequestResponse> getFriendRequests(String token);

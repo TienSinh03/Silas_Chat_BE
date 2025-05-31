@@ -63,4 +63,7 @@ public class MessageDTO {
 
     // Quan hệ với FIle
     private List<ObjectId> fileIds;
+
+    private String senderName;
+
 }

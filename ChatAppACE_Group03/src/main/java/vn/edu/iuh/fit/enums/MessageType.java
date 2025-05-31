@@ -19,7 +19,9 @@ public enum MessageType {
     FILE("FILE"),
     STICKER("STICKER"),
     GIF("GIF"),
-    EMOJI("EMOJI"),;
+    EMOJI("EMOJI"),
+    SYSTEM("SYSTEM"),
+    POLL("POLL"),;
 
     private String type;
 
